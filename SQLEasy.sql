@@ -81,3 +81,34 @@ WHEN  N  NOT IN (SELECT P from BST where P is not null ) THEN CAST(N as VARCHAR)
 ELSE CAST(N as VARCHAR) + ' Inner' END
 from  BST
 order by N
+-- Câu 21: New Companies
+select cpy.company_code, cpy.founder, 
+COUNT(DISTINCT(e.lead_manager_code)),
+COUNT(DISTINCT(e.senior_manager_code)),
+COUNT(DISTINCT(e.manager_code)),
+COUNT(DISTINCT(e.employee_code))
+from Company as cpy left join Employee as e on cpy.company_code = e.company_code
+GROUP BY cpy.company_code, cpy.founder
+ORDER BY cpy.company_code asc
+-- Câu 22: Revising Aggregations - The Count Function
+select COUNT(Name) from CITY where Population > 100000
+-- Câu 23: Revising Aggregations - The SUM Function
+select SUM(Population) from CITY where District = N'California'
+-- Câu 24: The Blunder
+select CEILING(AVG(CAST(Salary as DECIMAL ))-AVG(CAST(REPLACE(Salary,'0','')as DECIMAL))) from employees
+-- Câu 25: Revising Aggregations - Averages
+select avg(population) from city where district = N'California'
+-- Câu 26: Average Population
+select AVG(population) from city
+-- Câu 27: Japan Population
+select SUM(population) from city where countrycode = N'JPN'
+-- Câu 28: Population Density Difference
+select MAX(population) - MIN(population) from city
+-- Câu 29: Top Earners
+Select MAX(salary * months) ,COUNT(*)
+from Employee
+where salary * months = (select MAX(salary*months) from Employee)
+-- Câu 30: Weather Observation Station 12
+select CAST(ROUND(SUM(LAT_N), 2) as DECIMAL(12,2)), CAST(ROUND(SUM(LONG_W), 2) as DECIMAL(12,2)) from station
+-- Câu 31: Weather Observation Station 13
+SELECT CAST(SUM(LAT_N) as DECIMAL(12,4)) FROM STATION WHERE LAT_N > 38.7880 and LAT_N < 137.2345
