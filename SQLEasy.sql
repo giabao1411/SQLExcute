@@ -112,3 +112,43 @@ where salary * months = (select MAX(salary*months) from Employee)
 select CAST(ROUND(SUM(LAT_N), 2) as DECIMAL(12,2)), CAST(ROUND(SUM(LONG_W), 2) as DECIMAL(12,2)) from station
 -- Câu 31: Weather Observation Station 13
 SELECT CAST(SUM(LAT_N) as DECIMAL(12,4)) FROM STATION WHERE LAT_N > 38.7880 and LAT_N < 137.2345
+-- Câu 32: Weather Observation Station 14
+select CAST(MAX(LAT_N) as decimal(12,4)) from station where lat_n < 137.2345
+-- Câu 33: Weather Observation Station 15
+select CAST(LONG_W as decimal (12,4)) from STATION where LAT_N = (Select MAX(LAT_N) from station where LAT_N < 137.2345)
+-- Câu 34 : Weather Observation Station 16
+select top 1 CAST(LAT_N as decimal (12,4)) from station where lat_n > 38.7780
+order by lat_n asc 
+-- Câu 35: Weather Observation Station 17
+select top 1 CAST(LONG_W as decimal (12,4))
+from station 
+where lat_n > 38.7780
+ORDER BY lat_n asc
+-- Câu 36: Weather Observation Station 18
+SELECT CAST( 
+ABS(MIN(LAT_N)-MAX(LAT_N)) + ABS(MIN(LONG_W)-MAX(LONG_W))
+as DECIMAL(12,4))
+from station
+-- Câu 37: Weather Observation Station 19
+select CAST( 
+    SQRT(
+        POWER(MAX(LAT_N)-MIN(LAT_N),2) +
+        POWER(MAX(LONG_W)-MIN(LONG_W),2)
+    )
+    as DECIMAL (12,4))
+    from Station
+-- Câu 38: Weather Observation Station 20
+SELECT CONVERT(DECIMAL(18,4),LAT_N)
+FROM STATION
+ORDER BY LAT_N
+OFFSET (SELECT COUNT(*) FROM STATION) / 2 ROWS
+FETCH NEXT 1 ROWS ONLY
+-- Câu 39: Population Census
+select SUM(cty.population) from CITY as cty join country as cnt on cty.CountryCode = cnt.Code where cnt.continent = N'Asia'
+-- Câu 40: African Cities
+SELECT ct.Name FROM City as ct join Country as cnt on ct.CountryCode = cnt.Code
+WHERE cnt.Continent = N'Africa'
+-- Câu 41: Average Population of Each Continent
+select cnt.Continent , FLOOR(AVG(ct.Population)) FROM
+COUNTRY as cnt join City as ct on cnt.code = ct.CountryCode
+group by cnt.Continent
