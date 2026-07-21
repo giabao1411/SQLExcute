@@ -152,3 +152,17 @@ WHERE cnt.Continent = N'Africa'
 select cnt.Continent , FLOOR(AVG(ct.Population)) FROM
 COUNTRY as cnt join City as ct on cnt.code = ct.CountryCode
 group by cnt.Continent
+-- Câu 42: Draw The Triangle 1 
+declare @var int = 20;
+while @var > 0
+begin 
+print(replicate('* ',@var))
+set @var = @var - 1
+end
+-- Câu 43: Draw The Triangle 2
+declare @var int = 1
+while @var<=20
+begin 
+print(replicate('* ',@var))
+set @var=@var+1
+end
