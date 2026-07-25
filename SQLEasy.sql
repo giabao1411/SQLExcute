@@ -166,3 +166,8 @@ begin
 print(replicate('* ',@var))
 set @var=@var+1
 end
+-- Câu 43 : Combine Two Tables
+SELECT p.firstName, p.lastName,
+a.city, a.state
+FROM Person p LEFT JOIN Address a 
+ON p.personId = a.personId
