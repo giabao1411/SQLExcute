@@ -131,3 +131,13 @@ HAVING
     OR (f1.X = f1.Y AND COUNT(*) > 1)
 
 ORDER BY f1.X ASC;
+-- Câu 10: Consecutive Numbers
+WITH RankedLogs AS (
+    SELECT num,
+           LEAD(num, 1) OVER (ORDER BY id) AS next_1,
+           LEAD(num, 2) OVER (ORDER BY id) AS next_2
+    FROM Logs
+)
+SELECT DISTINCT num AS ConsecutiveNums
+FROM RankedLogs
+WHERE num = next_1 AND next_1 = next_2;

@@ -171,3 +171,20 @@ SELECT p.firstName, p.lastName,
 a.city, a.state
 FROM Person p LEFT JOIN Address a 
 ON p.personId = a.personId
+-- Câu 44 : Find the employee has salary more than manager
+select e1.name as Employee
+from Employee as e1 join Employee as e2 on e1.managerId = e2.id and e1.salary > e2.salary
+-- Câu 45 : Find duplicate email
+select email 
+from Person
+group by email
+having count(email)>1 
+-- Câu 46: Customers Who Never Order
+select cus.name  as Customers from Customers as cus where id not in (select customerId from orders)
+-- Câu 47: Delete Duplicate Email keeping only one unique email with the smallest id 
+delete p1
+from Person as p1 join Person as p2 on p1.email=p2.email and p1.id > p2.id
+-- Câu 48 : Rising Temperature
+select w2.id 
+from Weather as w1 join Weather as w2 on DATEADD(day,1,w1.recordDate)=w2.recordDate 
+and w2.temperature > w1.temperature
