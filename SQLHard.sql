@@ -104,3 +104,38 @@ JOIN Ranked_Daily_Hackers r
 JOIN Hackers h 
   ON r.hacker_id = h.hacker_id
 ORDER BY c.submission_date ASC;
+-- Câu 3 : Department Top Three Salaries 
+WITH RankedSalaries AS (
+    SELECT 
+        d.name AS Department,
+        e.name AS Employee,
+        e.salary AS Salary,
+        DENSE_RANK() OVER (
+            PARTITION BY e.departmentId 
+            ORDER BY e.salary DESC
+        ) AS rnk
+    FROM Employee e
+    JOIN Department d ON e.departmentId = d.id
+)
+SELECT Department, Employee, Salary
+FROM RankedSalaries
+WHERE rnk <= 3;
+-- Câu 4 : Trips and Users
+WITH TbUsersNotBanned AS (
+    SELECT status, request_at
+    FROM Trips
+    WHERE client_id IN (SELECT users_id FROM Users WHERE banned = 'No')
+      AND driver_id IN (SELECT users_id FROM Users WHERE banned = 'No')
+      AND request_at BETWEEN '2013-10-01' AND '2013-10-03' 
+)
+SELECT 
+        request_at AS Day,
+        
+        CAST(
+            SUM(CASE WHEN status LIKE 'cancelled%' THEN 1.0 ELSE 0 END) 
+            / COUNT(*) as
+            DECIMAL(12,2)
+        ) AS 'Cancellation Rate'
+    FROM TbUsersNotBanned
+    GROUP BY request_at
+
