@@ -188,3 +188,53 @@ from Person as p1 join Person as p2 on p1.email=p2.email and p1.id > p2.id
 select w2.id 
 from Weather as w1 join Weather as w2 on DATEADD(day,1,w1.recordDate)=w2.recordDate 
 and w2.temperature > w1.temperature
+-- Câu 49: Game Play Analysis I
+select player_id , MIN(event_date) as first_login
+from Activity 
+group by player_id
+-- Câu 50: Employee Bonus
+select e.name , b.bonus
+from employee as e left join bonus as b on e.empId = b.empId  
+where b.bonus < 1000 or b.bonus is null
+-- Câu 51: Find Customer Referee
+select name
+from Customer 
+where referee_id is null or referee_id !=2 
+-- Câu 52: Customer Placing the Largest Number of Orders
+select TOP 1 customer_number 
+from orders 
+group by customer_number
+order by COUNT(*) desc
+-- Câu 53: Big Countries
+select name , population, area 
+from World 
+where area >= 3000000 or population >= 25000000
+-- Câu 54: Classes With at Least 5 Students
+select class 
+from Courses 
+group by class
+having count(*) >=5
+-- Câu 55: Sales Person
+select name 
+from SalesPerson
+where sales_id NOT IN(select s.sales_id
+from salesperson as s join orders as o on s.sales_id = o.sales_id join company as c on o.com_id = c.com_id 
+where c.name = N'RED')
+-- Câu 56: Triangle Judgement
+select x, y ,z ,
+CASE WHEN x + y > z and y+z>x and z+x > y then N'Yes' ELSE N'No' end as triangle 
+from Triangle
+-- Câu 57: Biggest Single Number
+with temp as (select  num
+from MyNumbers 
+group by num 
+having COUNT(*)=1
+)
+select MAX(num) as num from temp
+-- Câu 58: Not Boring Movies
+select * 
+from Cinema 
+where id % 2 = 1 and description != N'boring'
+order by rating desc
+-- Câu 59 : Swap Sex of Employees
+update salary set sex = case when sex=N'm' then  N'f' else  N'm' end 
