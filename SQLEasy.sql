@@ -238,3 +238,94 @@ where id % 2 = 1 and description != N'boring'
 order by rating desc
 -- Câu 59 : Swap Sex of Employees
 update salary set sex = case when sex=N'm' then  N'f' else  N'm' end 
+-- Câu 60 : Actors and Directors Who Cooperated At Least Three Times
+select actor_id, director_id 
+from ActorDIrector
+group by actor_id,director_id 
+having COUNT(*) >=3
+-- Câu 61: Product Sales Analysis I
+select d.product_name, s.year,s.price
+from Sales s join Product d on s.product_id = d.product_id
+-- Câu 62: Project Employees I
+select p.project_id ,CAST(AVG(e.experience_years*1.0)as decimal (12,2)) as average_years
+from Project p join Employee e on p.employee_id = e.employee_id
+group by p.project_id
+-- Câu 63: Sales Analysis III
+--C1: subquery
+select distinct product_id ,product_name 
+from (select p.product_id ,p.product_name  from Product p join sales s on p.product_id = s.product_id
+where s.sale_date between '2019-01-01' and '2019-03-31'
+) as temp where product_id not in (select product_id 
+from sales where sale_date > '2019-03-31' or sale_date <'2019-01-01')
+--C2: group by and date [min(date);max(date)] bài toán chỉ nằm duy nhất trong khoảng nên sử dụng min,max 
+SELECT p.product_id, p.product_name
+FROM Product p
+JOIN Sales s ON p.product_id = s.product_id
+GROUP BY p.product_id, p.product_name
+HAVING MIN(s.sale_date) >= '2019-01-01' 
+   AND MAX(s.sale_date) <= '2019-03-31';
+-- Câu 64: User Activity for the Past 30 Days I
+select activity_date as day , COUNT(distinct user_id) as active_users 
+from Activity 
+where activity_date between dateadd(day,-29,'2019-07-27') and '2019-07-27' and activity_type in  ('open_session', 'end_session', 'scroll_down', 'send_message')
+group by activity_date
+-- Câu 65: Article Views I
+select distinct author_id as id 
+from Views 
+where author_id = viewer_id
+order by id
+-- Câu 66:Reformat Department Table
+SELECT 
+    id,
+    Jan AS Jan_Revenue, Feb AS Feb_Revenue, Mar AS Mar_Revenue,
+    Apr AS Apr_Revenue, May AS May_Revenue, Jun AS Jun_Revenue,
+    Jul AS Jul_Revenue, Aug AS Aug_Revenue, Sep AS Sep_Revenue,
+    Oct AS Oct_Revenue, Nov AS Nov_Revenue, Dec AS Dec_Revenue
+FROM 
+    Department
+PIVOT (
+    MAX(revenue)
+    FOR month IN (
+        [Jan], [Feb], [Mar], [Apr], [May], [Jun], 
+        [Jul], [Aug], [Sep], [Oct], [Nov], [Dec]
+    )
+) AS PivotTable;
+-- Câu 67: Queries Quality and Percentage
+select query_name,
+ CAST(AVG(rating*1.0/position*1.0) as decimal(12,2)) as quality,
+ CAST(AVG(CASE when rating < 3 then 1.0 else 0.0 end )*100 as decimal (12,2)) as poor_query_percentage
+from Queries 
+group by query_name
+-- Câu 68: Average Selling Price
+select p.product_id ,
+CAST(COALESCE(SUM(u.units * p.price) * 1.0 / NULLIF(SUM(u.units), 0), 0) 
+        as decimal (12,2)) as average_price
+from Prices p left join UnitsSold u on p.product_id = u.product_id and u.purchase_date between p.start_date and p.end_date
+group by p.product_id
+-- Câu 69: Students and Examinations
+SELECT 
+    s.student_id,
+    s.student_name,
+    sub.subject_name,
+    COUNT(e.student_id) AS attended_exams
+FROM 
+    Students s
+CROSS JOIN 
+    Subjects sub
+LEFT JOIN 
+    Examinations e 
+    ON s.student_id = e.student_id 
+   AND sub.subject_name = e.subject_name
+GROUP BY 
+    s.student_id, 
+    s.student_name, 
+    sub.subject_name
+ORDER BY 
+    s.student_id, 
+    sub.subject_name;
+-- Câu 70: List the Products Ordered in a Period
+select p.product_name , sum(o.unit) as unit
+from Products p join orders o on p.product_id = o.product_id 
+where o.order_date >='2020-02-01' and o.order_date <='2020-02-29'
+group by o.product_id,p.product_name
+having sum(o.unit)>=100
