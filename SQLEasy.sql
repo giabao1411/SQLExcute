@@ -329,3 +329,81 @@ from Products p join orders o on p.product_id = o.product_id
 where o.order_date >='2020-02-01' and o.order_date <='2020-02-29'
 group by o.product_id,p.product_name
 having sum(o.unit)>=100
+-- Câu 71: Replace Employee ID With The Unique Identifier
+select euni.unique_id , e.name 
+from Employees as e left join EmployeeUNI as euni
+on e.id = euni.id
+-- Câu 72: Top Travellers
+select u.name , sum(COALESCE (r.distance,0)) as travelled_distance
+from Users u left join Rides r 
+on u.id = r.user_id 
+group by r.user_id,u.name
+order by sum(r.distance) desc , u.name
+-- Câu 73: Group Sold Products By The Date
+select  sell_date , COUNT(product ) as num_sold, string_agg(product,',') as products
+from (
+    select distinct sell_date, product 
+    from activities 
+
+) as temp
+group by sell_date
+order by sell_date
+-- Câu 74:Find Users With Valid E-Mails
+SELECT 
+    user_id, 
+    name, 
+    mail
+FROM 
+    Users
+WHERE 
+    mail LIKE '[a-zA-Z]%@leetcode.com'
+    and mail  COLLATE Latin1_General_CS_AS LIKE '%@leetcode.com'
+    AND LEFT(mail, LEN(mail) - 13) NOT LIKE '%[^a-zA-Z0-9_.-]%';
+-- Câu 75: Patients With a Condition
+select *
+from Patients 
+where conditions LIKE N'% DIAB1%' or conditions LIKE N'DIAB1%'
+-- Câu 76: Customer Who Visited but Did Not Make Any Transactions
+select customer_id ,COUNT(*)count_no_trans
+from visits 
+where visit_id not in (select visit_id
+from transactions)
+group by customer_id 
+-- C2 : 
+SELECT 
+    v.customer_id, 
+    COUNT(v.visit_id) AS count_no_trans
+FROM 
+    Visits v
+LEFT JOIN 
+    Transactions t ON v.visit_id = t.visit_id
+WHERE 
+    t.transaction_id IS NULL
+GROUP BY 
+    v.customer_id;
+-- Câu 77: Bank Account Summary II
+select u.name , SUM(t.amount) balance
+from Users u join Transactions t 
+on u.account = t.account
+group by t.account ,u.name
+having SUM(t.amount) >10000
+-- Câu 78: Percentage of Users Attended a Contest
+select contest_id , 
+ROUND(COUNT(distinct user_id)*100.0/(SELECT COUNT(*) from Users),2) as percentage
+from Register 
+group by contest_id 
+order by percentage desc, contest_id 
+-- Câu 79: Average Time of Process per Machine
+SELECT
+    s.machine_id,
+    ROUND(AVG(e.timestamp - s.timestamp), 3) AS processing_time
+FROM Activity s
+JOIN Activity e
+    ON s.machine_id = e.machine_id
+   AND s.process_id = e.process_id
+WHERE s.activity_type = 'start'
+  AND e.activity_type = 'end'
+GROUP BY s.machine_id;
+-- Câu 80: Fix Names in a Table
+select user_id, UPPER(LEFT(name, 1)) + LOWER(SUBSTRING(name, 2, LEN(name))) as name from Users
+order by user_id
