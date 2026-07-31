@@ -407,3 +407,80 @@ GROUP BY s.machine_id;
 -- Câu 80: Fix Names in a Table
 select user_id, UPPER(LEFT(name, 1)) + LOWER(SUBSTRING(name, 2, LEN(name))) as name from Users
 order by user_id
+-- Câu 81: Invalid Tweets
+select tweet_id 
+from Tweets 
+where LEN(content) > 15
+-- Câu 82: Daily Leads and Partners
+select date_id , make_name , COUNT(distinct lead_id) unique_leads , COUNT(distinct partner_id) unique_partners
+from DailySales 
+group by date_id, make_name
+-- Câu 83: Find Followers Count
+select user_id , count(follower_id) as followers_count
+from Followers
+group by user_id 
+order by user_id
+-- Câu 84: The Number of Employees Which Report to Each Employee
+with cte as (select reports_to, COUNT(reports_to) reports_count, round(AVG(age*1.0),0) average_age
+from employees 
+where reports_to is not null
+group by reports_to )
+select e.employee_id , e.name , cte.reports_count , cte.average_age
+from employees as e join cte on e.employee_id = cte.reports_to
+order by employee_id
+--c2
+select m.employee_id , m.name , COUNT(e.reports_to) reports_count ,ROUND(AVG(e.age*1.0),0) average_age
+from employees as e join employees as m 
+on e.reports_to = m.employee_id
+group by e.reports_to, m.employee_id, m.name
+order by employee_id
+-- Câu 85: Find Total Time Spent by Each Employee
+select event_day as day , emp_id , SUM(out_time - in_time) as total_time
+from Employees 
+group by event_day , emp_id
+-- Câu 86: Recyclable and Low Fat Products
+select product_id 
+from Products 
+where low_fats = N'Y' and recyclable = N'Y'
+-- Câu 87: Primary Department for Each Employee
+--C1: Subquery
+select employee_id , department_id 
+from Employee
+where primary_flag = N'Y' 
+or employee_id IN (select employee_id 
+from Employee 
+group by employee_id
+having COUNT(employee_id) =1
+)
+--C2: Rownumber()
+WITH RankedEmployees AS (
+    SELECT 
+        employee_id, 
+        department_id,
+        ROW_NUMBER() OVER(
+            PARTITION BY employee_id 
+            ORDER BY primary_flag DESC
+        ) AS rn
+    FROM Employee
+)
+SELECT 
+    employee_id, 
+    department_id
+FROM RankedEmployees
+WHERE rn = 1;
+-- Câu 88 : Rearrange Products Table
+SELECT product_id, store, price
+FROM Products
+UNPIVOT (
+    price FOR store IN (store1, store2, store3)
+) AS UnpivotedTable;
+-- Câu 89: Calculate Special Bonus
+select employee_id ,
+CASE WHEN employee_id % 2 = 1 and LEFT(name,1) != N'M' THEN salary ELSE 0 end as bonus
+from employees
+order by employee_id
+-- Câu 90: The Latest Login in 2020
+select user_id , MAX(time_stamp) last_stamp
+from Logins 
+where time_stamp >='2020-01-01 00:00:00' and time_stamp <='2020-12-31 23:59:59'
+group by user_id 
