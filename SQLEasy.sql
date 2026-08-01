@@ -484,3 +484,57 @@ select user_id , MAX(time_stamp) last_stamp
 from Logins 
 where time_stamp >='2020-01-01 00:00:00' and time_stamp <='2020-12-31 23:59:59'
 group by user_id 
+-- Câu 91 :Employees With Missing Information
+select COALESCE(e.employee_id, s.employee_id) AS employee_id
+from Employees e full outer join salaries s on e.employee_id = s.employee_id
+where e.name is null or s.salary is null
+order by employee_id
+-- Câu 92 : Employees Whose Manager Left the Company
+select e.employee_id 
+from Employees e left join employees m on e.manager_id = m.employee_id 
+where m.employee_id is null and e.salary < 30000 and e.manager_id is not null
+order by e.employee_id
+-- Câu 93 : Number of Unique Subjects Taught by Each Teacher
+select teacher_id , count(distinct subject_id) cnt
+from Teacher 
+group by teacher_id
+-- Câu 94 : Find Valid Emails
+select user_id , email
+from Users
+where email LIKE '%@%.com'                          
+  AND email NOT LIKE '%@%@%'                       
+  AND email LIKE '[a-zA-Z0-9_]%@[a-zA-Z]%.com'      
+  AND email NOT LIKE '%[^a-zA-Z0-9_]%@%.com'        
+  AND email NOT LIKE '%@%[^a-zA-Z]%.com'
+order by user_id
+-- Câu 95 : Find Products with Valid Serial Numbers
+SELECT *
+FROM Products
+WHERE PATINDEX(
+'%[^A-Za-z0-9]SN[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][^A-Za-z0-9]%',
+' ' + description + ' ' COLLATE Latin1_General_CS_AS
+) > 0
+order by product_id
+-- Câu 96 : Find Books with No Available Copies
+--c1
+with cte as (select book_id, count(book_id) as total
+from borrowing_records
+where return_date is null
+group by book_id)
+select lb.book_id , lb.title , lb.author, lb.genre, lb.publication_year, total as current_borrowers
+from library_books as lb join cte as c on lb.book_id = c.book_id 
+where lb.total_copies = c.total
+order by  total desc,lb.title asc
+--c2
+select lb.book_id, lb.title, lb.author, lb.genre ,lb.publication_year , COUNT(br.book_id) as current_borrowers
+from library_books as lb left join borrowing_records as br on lb.book_id = br.book_id
+where br.return_date is null
+group by lb.book_id , lb.title,lb.author, lb.genre, lb.publication_year, lb.total_copies
+having COUNT(br.book_id) = lb.total_copies
+order by COUNT(br.book_id) desc , lb.title asc
+-- Câu 97: Find Users with High Token Usage
+select user_id, COUNT(prompt) as prompt_count ,ROUND(AVG(tokens*1.0),2) as avg_tokens
+from prompts 
+group by user_id 
+having COUNT(prompt) >= 3 and MAX(tokens) > AVG(tokens*1.0)
+order by avg_tokens desc , user_id
