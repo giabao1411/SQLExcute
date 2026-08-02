@@ -141,3 +141,133 @@ WITH RankedLogs AS (
 SELECT DISTINCT num AS ConsecutiveNums
 FROM RankedLogs
 WHERE num = next_1 AND next_1 = next_2;
+-- Câu 11: Game Play Analysis IV
+--C1: cross join
+WITH first_logins AS (
+    SELECT 
+        player_id, 
+        MIN(event_date) AS first_date
+    FROM Activity
+    GROUP BY player_id
+),
+ temp as (
+    select COUNT(DISTINCT a.player_id) as total_player_vaild 
+from first_logins a join Activity cte on DATEADD(day,1,a.first_date) = cte.event_date and a.player_id = cte.player_id ), 
+temp_total as(
+    select COUNT(distinct player_id) as total from activity)
+
+select ROUND(temp.total_player_vaild*1.0/temp_total.total,2) as fraction from temp cross join temp_total
+--C2: 
+WITH first_logins AS (
+    SELECT 
+        player_id, 
+        MIN(event_date) AS first_date
+    FROM Activity
+    GROUP BY player_id
+)
+ select 
+    ROUND(
+        COUNT(*)*1.0/ (SELECT COUNT(*) from first_logins),
+        2
+    ) as fraction
+    from first_logins f 
+    join Activity a
+    on f.player_id = a.player_id
+    where a.event_date = DATEADD(day, 1 ,f.first_date)
+--C3: dùng window function
+WITH RankedActivity AS (
+    SELECT 
+        player_id,
+        event_date,
+        MIN(event_date) OVER(PARTITION BY player_id) AS first_date,
+        ROW_NUMBER() OVER(PARTITION BY player_id ORDER BY event_date) AS rn
+    FROM Activity
+)
+SELECT 
+    ROUND(
+        COUNT(CASE WHEN DATEADD(day, 1, first_date) = event_date AND rn = 2 THEN 1 END) * 1.0 
+        / COUNT(DISTINCT player_id), 
+        2
+    ) AS fraction
+FROM RankedActivity;
+-- Câu 12: Managers with at Least 5 Direct Reports
+select m.name 
+from employee e 
+join employee m 
+on e.managerId = m.id
+group by m.id,m.name
+having COUNT(m.id) >= 5
+-- Câu 13: Investments in 2016
+--C1: subquery
+WITH UniqueLocation AS (
+    SELECT lat, lon
+    FROM Insurance
+    GROUP BY lat, lon
+    HAVING COUNT(*) = 1
+),
+DuplicateTiv2015 AS (
+    SELECT tiv_2015
+    FROM Insurance
+    GROUP BY tiv_2015
+    HAVING COUNT(*) > 1
+)
+SELECT 
+    ROUND(SUM(i.tiv_2016 * 1.0), 2) AS tiv_2016
+FROM Insurance i
+JOIN UniqueLocation ul 
+    ON i.lat = ul.lat AND i.lon = ul.lon   
+JOIN DuplicateTiv2015 dt 
+    ON i.tiv_2015 = dt.tiv_2015;
+--C2 : Window Function
+WITH Stats AS (
+    SELECT 
+        tiv_2016,
+        COUNT(*) OVER(PARTITION BY tiv_2015) AS count_tiv_2015,
+        COUNT(*) OVER(PARTITION BY lat, lon) AS count_lat_lon
+    FROM Insurance
+)
+SELECT 
+    ROUND(SUM(tiv_2016 * 1.0), 2) AS tiv_2016
+FROM Stats
+WHERE count_tiv_2015 > 1      
+  AND count_lat_lon = 1;     
+-- Câu 14: Friend Requests II: Who Has the Most Friends
+WITH AllFriends AS (
+    -- Lấy danh sách ID từ cả 2 vai trò: người gửi và người nhận
+    SELECT requester_id AS id FROM RequestAccepted
+    UNION ALL
+    SELECT accepter_id AS id FROM RequestAccepted
+)
+SELECT TOP 1 
+    id, 
+    COUNT(*) AS num
+FROM AllFriends
+-- Câu 15: Tree Node
+select id,
+CASE WHEN 
+p_id is null then N'Root' 
+when p_id in (select id from Tree) and id in (select p_id from tree) then N'Inner'
+else N'Leaf' end as type 
+from Tree
+-- Câu 16: Exchange Seats
+select 
+case when id % 2 != 0 and id = (select MAX(id) from seat ) then id
+when id % 2 !=0 then id + 1
+else id - 1 end as id ,student
+from seat 
+order by id
+-- Câu 17: Customers Who Bought All Products
+select customer_id 
+from Customer
+group by customer_id
+having COUNT(distinct product_key) = (select COUNT(*) from product)
+-- Câu 18: Product Sales Analysis III
+with cte as (
+    select product_id , MIN(year) as first_year_sale_product
+    from sales 
+    group by product_id 
+)
+select s.product_id , s.year as first_year ,s.quantity,s.price
+from sales s 
+join cte on
+s.product_id = cte.product_id and s.year=cte.first_year_sale_product
