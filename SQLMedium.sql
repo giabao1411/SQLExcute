@@ -271,3 +271,64 @@ select s.product_id , s.year as first_year ,s.quantity,s.price
 from sales s 
 join cte on
 s.product_id = cte.product_id and s.year=cte.first_year_sale_product
+-- Câu 19: Market Analysis I
+select s.user_id as buyer_id , s.join_date , COUNT(o.buyer_id) orders_in_2019
+from Users s left join Orders o 
+on s.user_id = o.buyer_id and year(o.order_date) = 2019
+group by s.user_id,s.join_date
+-- Câu 20: Product Price at a Given Date
+/*Nhóm 1: Có ít nhất một lần thay đổi giá vào hoặc trước ngày 2019-08-16. Giá của sản phẩm sẽ là giá ở ngày thay đổi gần nhất
+ (ngày lớn nhất <= 2019-08-16).
+Nhóm 2: Lần thay đổi giá đầu tiên diễn ra sau ngày 2019-08-16 (tức là tính đến ngày 2019-08-16 
+thì chưa bao giờ đổi giá). Giá của nhóm này sẽ lấy giá mặc định là 10*/
+WITH LatestPrice AS (
+    SELECT 
+        product_id,
+        new_price AS price,
+        RANK() OVER(PARTITION BY product_id ORDER BY change_date DESC) AS rnk
+    FROM Products
+    WHERE change_date <= '2019-08-16'
+),
+AllProducts AS (
+    SELECT DISTINCT product_id 
+    FROM Products
+)
+SELECT 
+    p.product_id,
+    COALESCE(lp.price, 10) AS price
+FROM AllProducts p
+LEFT JOIN LatestPrice lp 
+    ON p.product_id = lp.product_id AND lp.rnk = 1;
+-- Câu 21: Immediate Food Delivery II
+WITH FirstOrders AS (
+    SELECT 
+        customer_id, 
+        MIN(order_date) AS min_order_date
+    FROM Delivery
+    GROUP BY customer_id
+)
+SELECT 
+    ROUND(
+        COUNT(CASE WHEN d.order_date = d.customer_pref_delivery_date THEN 1 END) * 100.0 
+        / COUNT(*), 
+        2
+    ) AS immediate_percentage
+FROM Delivery d
+JOIN FirstOrders f 
+    ON d.customer_id = f.customer_id 
+   AND d.order_date = f.min_order_date;
+-- Câu 22: Monthly Transactions I
+select LEFT(trans_date,7) as month , country , COUNT(id) trans_count
+, COUNT(CASE WHEN state = N'approved' then 1 end ) as approved_count
+ , SUM(amount)  as trans_total_amount 
+ ,SUM(CASE WHEN state = N'approved' then amount else 0 end ) as approved_total_amount
+from Transactions 
+group by LEFT(trans_date,7),country
+order by LEFT(trans_date,7) asc ,country desc
+-- Câu 23: Last Person to Fit in the Bus
+with cte as (select turn, person_id, person_name, weight, SUM(weight) OVER (order by turn) AS total_weight
+from Queue
+)
+select top 1 person_name  from cte
+where total_weight <= 1000
+order by total_weight desc 
