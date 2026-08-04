@@ -332,3 +332,88 @@ from Queue
 select top 1 person_name  from cte
 where total_weight <= 1000
 order by total_weight desc 
+-- Câu 24: Restaurant Growth
+WITH DailySales AS (
+    -- Bước 1: Tổng doanh thu từng ngày
+    SELECT 
+        visited_on,
+        SUM(amount) AS day_amount
+    FROM Customer
+    GROUP BY visited_on
+),
+MovingStats AS (
+    -- Bước 2: Tính tổng 7 ngày & trung bình 7 ngày bằng Cửa sổ (Window Frame)
+    SELECT 
+        visited_on,
+        SUM(day_amount) OVER (
+            ORDER BY visited_on 
+            ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+        ) AS amount,
+        ROUND(
+            AVG(day_amount * 1.0) OVER (
+                ORDER BY visited_on 
+                ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+            ), 2
+        ) AS average_amount,
+        -- Lấy ngày nhỏ nhất toàn bảng để kiểm tra điều kiện đủ 7 ngày
+        MIN(visited_on) OVER () AS first_date
+    FROM DailySales
+)
+-- Bước 3 & 4: Lọc đủ 7 ngày và xuất kết quả
+SELECT 
+    visited_on,
+    amount,
+    average_amount
+FROM MovingStats
+WHERE visited_on >= DATEADD(day, 6, first_date) -- Dùng DATE_ADD(first_date, INTERVAL 6 DAY) nếu là MySQL
+ORDER BY visited_on ASC;
+-- Câu 25: Movie Rating
+with cte as (select top 1 u.name as results
+from Users u join MovieRating r 
+on u.user_id = r.user_id
+group by u.user_id ,u.name
+order by COUNT(r.movie_id) desc, u.name asc)
+, 
+cte2 as (
+select top 1 m.title as results
+from Movies m join MovieRating r 
+on m.movie_id = r.movie_id
+where r.created_at >='2020-02-01' and r.created_at <= '2020-02-29'
+group by m.movie_id,m.title
+order by ROUND(AVG(r.rating*1.0),2) desc, m.title )
+
+select * from cte 
+union all 
+select * from cte2
+-- Câu 26: Capital Gain/Loss
+SELECT 
+    stock_name,
+    SUM(CASE WHEN operation = 'Sell' THEN price ELSE -price END) AS capital_gain_loss
+FROM Stocks
+GROUP BY stock_name;
+-- Câu 27: Count Salary Categories
+select 'Average Salary' as category, COUNT(*) as accounts_count from
+Accounts where 
+income >= 20000 and income <=50000
+union all
+select 'Low Salary' as category, COUNT(*) as accounts_count from
+Accounts where 
+income < 20000 
+union all
+select 'High Salary' as category, COUNT(*) as accounts_count from
+Accounts where 
+ income > 50000
+ -- Câu 28: Confirmation Rate 
+ select s.user_id, 
+ROUND(COALESCE(SUM(case when c.action='confirmed' then 1.0 else 0 end)/NULLIF(COUNT(c.user_id),0),0),2)  as confirmation_rate
+from 
+Signups s left join Confirmations c 
+on s.user_id = c.user_id 
+group by s.user_id
+--c2 
+select s.user_id, 
+ROUND(COALESCE(AVG(CASE WHEN c.action = 'confirmed' THEN 1.0 ELSE 0 END),0),2)  as confirmation_rate
+from 
+Signups s left join Confirmations c 
+on s.user_id = c.user_id 
+group by s.user_id
