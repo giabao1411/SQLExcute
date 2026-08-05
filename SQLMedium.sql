@@ -417,3 +417,170 @@ from
 Signups s left join Confirmations c 
 on s.user_id = c.user_id 
 group by s.user_id
+--Câu 29: Odd and Even Transactions
+SELECT 
+    transaction_date,
+    COALESCE(SUM(CASE WHEN amount % 2 != 0 THEN amount ELSE 0 END), 0) AS odd_sum,
+    COALESCE(SUM(CASE WHEN amount % 2 = 0 THEN amount ELSE 0 END), 0) AS even_sum
+FROM transactions 
+GROUP BY transaction_date
+ORDER BY transaction_date;
+--Câu 30 : Find Students Who Improved
+WITH RankedScores AS (
+    SELECT 
+        student_id,
+        subject,
+        score,
+        -- Đánh số 1 cho bài thi ĐẦU TIÊN
+        ROW_NUMBER() OVER (
+            PARTITION BY student_id, subject 
+            ORDER BY exam_date ASC
+        ) AS rn_asc,
+        -- Đánh số 1 cho bài thi GẦN NHẤT
+        ROW_NUMBER() OVER (
+            PARTITION BY student_id, subject 
+            ORDER BY exam_date DESC
+        ) AS rn_desc
+    FROM Scores
+)
+SELECT 
+    student_id,
+    subject,
+    MAX(CASE WHEN rn_asc = 1 THEN score END) AS first_score,
+    MAX(CASE WHEN rn_desc = 1 THEN score END) AS latest_score
+FROM RankedScores
+WHERE rn_asc = 1 OR rn_desc = 1
+GROUP BY student_id, subject
+-- Bắt buộc phải có ít nhất 2 bài thi (lần đầu khác lần cuối) và điểm sau > điểm đầu
+HAVING MAX(CASE WHEN rn_desc = 1 THEN score END) > MAX(CASE WHEN rn_asc = 1 THEN score END)
+   AND COUNT(score) >= 2
+ORDER BY student_id, subject;
+--Câu 31 : DNA Pattern Recognition
+select sample_id, dna_sequence, species , 
+CASE WHEN dna_sequence LIKE 'ATG%' then 1 else 0 end as has_start,
+CASE WHEN dna_sequence LIKE '%TAA' 
+           OR dna_sequence LIKE '%TAG' 
+           OR dna_sequence LIKE '%TGA' THEN 1 ELSE 0 END AS has_stop,
+    CASE WHEN dna_sequence LIKE '%ATAT%' THEN 1 ELSE 0 END AS has_atat,
+    CASE WHEN dna_sequence LIKE '%GGG%' THEN 1 ELSE 0 END AS has_ggg
+from Samples
+order by sample_id
+-- Câu 32 : Analyze Subscription Conversion 
+select user_id ,
+ ROUND(AVG(CASE When activity_type ='free_trial' then activity_duration *1.0 end),2) as trial_avg_duration
+ ,ROUND(AVG(Case when activity_type ='paid' then activity_duration *1.0 end),2) as paid_avg_duration
+from UserActivity
+where activity_type != 'cancelled'
+group by user_id 
+having COUNT( distinct activity_type) > 1
+order by user_id
+-- Câu 33: Find Product Recommendation Pairs
+-- Amazon muốn triển khai tính năng "Khách hàng mua sản phẩm này cũng mua..." dựa trên mô hình mua đồng thời. 
+-- Hãy viết giải pháp cho các bài toán sau: 
+-- Xác định các cặp sản phẩm khác nhau thường được cùng một khách hàng mua cùng nhau (trong đó product1_id < product2_id)
+-- Đối với mỗi cặp sản phẩm, xác định có bao nhiêu khách hàng đã mua cả hai sản phẩm 
+-- Một cặp sản phẩm được xem xét để đề xuất nếu có ít nhất 3 khách hàng khác nhau đã mua cả hai sản phẩm. Trả về bảng kết quả được sắp xếp theo số lượng khách hàng giảm dần, 
+-- và trong trường hợp có số lượng bằng nhau, 
+-- sắp xếp theo product1_id tăng dần, sau đó theo product2_id tăng dần.
+with UserPurchases as (
+    select pp.user_id,pp.product_id , p.category 
+    from ProductInfo p join ProductPurchases pp
+    on p.product_id = pp.product_id
+)
+select 
+    p1.product_id as product1_id ,
+    p2.product_id as product2_id , 
+    p1.category as product1_category,
+    p2.category as product2_category ,
+    COUNT(p1.user_id) customer_count 
+from UserPurchases p1 
+join UserPurchases p2 
+on p1.user_id = p2.user_id and p1.product_id < p2.product_id
+group by p1.product_id , p1.category , p2.product_id,p2.category
+having COUNT(p1.user_id)>=3
+order by COUNT(p1.user_id) desc , product1_id , product2_id
+-- Câu 34 : Seasonal Sales Analysis
+--C1 : 
+-- Viết lời giải để tìm danh mục sản phẩm phổ biến nhất cho mỗi mùa. Các mùa được định nghĩa như sau: 
+-- Mùa đông: Tháng 12, tháng 1, tháng 2 
+-- Mùa xuân: Tháng 3, tháng 4, tháng 5 
+-- Mùa hè: Tháng 6, tháng 7, tháng 8 
+-- Mùa thu: Tháng 9, tháng 10, tháng 11 
+-- Mức độ phổ biến của một danh mục được xác định bởi tổng số lượng bán ra trong mùa đó. 
+-- Nếu có sự trùng lặp, hãy chọn danh mục có tổng doanh thu cao nhất (số lượng × giá).
+-- Nếu vẫn có sự trùng lặp, hãy trả về danh mục có thứ tự xếp hạng thấp hơn. 
+-- Trả về bảng kết quả được sắp xếp theo mùa theo thứ tự tăng dần.
+with cte as (select s.product_id ,s.quantity,s.price , p.category
+, CASE WHEN MONTH(s.sale_date) in (12,1,2) then 'Winter'  
+ when MONTH(s.sale_date) in(3,4,5) then 'Spring' 
+ when MONTH(s.sale_date) in (6,7,8) then 'Summer' else 
+'Fall' end as season
+from sales s join products p 
+on s.product_id = p.product_id
+)
+,
+cte2 as (select season,category ,  sum(quantity)  as total_quantity, 
+SUM(quantity * price)  total_revenue
+from cte
+group by season,category)
+, cte3 as (select season , category , 
+total_quantity, total_revenue,
+ROW_NUMBER() OVER (
+            PARTITION BY season 
+            ORDER BY 
+                total_quantity DESC, 
+                total_revenue DESC, 
+                category ASC
+        ) AS rnk
+from cte2 )
+
+select season , category ,total_quantity,total_revenue
+from cte3
+where rnk=1
+order by season
+--C2: khác cách 1 ở điểm gộp cte cte2 thành 1 bảng tạm 
+WITH SeasonalAgg AS (
+    SELECT 
+        CASE 
+            WHEN MONTH(s.sale_date) IN (12, 1, 2) THEN 'Winter'
+            WHEN MONTH(s.sale_date) IN (3, 4, 5) THEN 'Spring'
+            WHEN MONTH(s.sale_date) IN (6, 7, 8) THEN 'Summer'
+            ELSE 'Fall'
+        END AS season,
+        p.category,
+        SUM(s.quantity) AS total_quantity,
+        SUM(s.quantity * s.price) AS total_revenue
+    FROM sales s
+    JOIN products p ON s.product_id = p.product_id
+    GROUP BY 
+        CASE 
+            WHEN MONTH(s.sale_date) IN (12, 1, 2) THEN 'Winter'
+            WHEN MONTH(s.sale_date) IN (3, 4, 5) THEN 'Spring'
+            WHEN MONTH(s.sale_date) IN (6, 7, 8) THEN 'Summer'
+            ELSE 'Fall'
+        END,
+        p.category
+),
+RankedCategories AS (
+    SELECT 
+        season,
+        category,
+        total_quantity,
+        total_revenue,
+        ROW_NUMBER() OVER (
+            PARTITION BY season 
+            ORDER BY 
+                total_quantity DESC, 
+                total_revenue DESC, 
+                category ASC
+        ) AS rnk
+    FROM SeasonalAgg
+)
+SELECT 
+    season,
+    category,
+    total_quantity,
+    total_revenue
+FROM RankedCategories
+WHERE rnk = 1
+ORDER BY season;
