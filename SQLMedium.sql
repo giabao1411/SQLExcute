@@ -584,3 +584,196 @@ SELECT
 FROM RankedCategories
 WHERE rnk = 1
 ORDER BY season;
+-- Câu 35 : Find Consistently Improving Employees
+-- Viết một bài toán tìm kiếm những nhân viên có sự cải thiện hiệu suất làm việc liên tục trong ba lần đánh giá gần nhất. 
+-- Một nhân viên phải có ít nhất 3 lần đánh giá để được xem xét.
+-- 3 lần đánh giá gần nhất của nhân viên phải cho thấy xếp hạng tăng dần (mỗi lần đánh giá tốt hơn lần trước). 
+-- Sử dụng 3 lần đánh giá gần nhất dựa trên ngày đánh giá cho mỗi nhân viên. 
+-- Tính điểm cải thiện bằng hiệu số giữa xếp hạng mới nhất và xếp hạng cũ nhất trong 3 lần đánh giá gần nhất.
+-- Trả về bảng kết quả được sắp xếp theo điểm cải thiện giảm dần, sau đó theo tên tăng dần.
+with cte as (select r.employee_id , e.name 
+from employees e join performance_reviews r
+on e.employee_id = r.employee_id 
+group by r.employee_id,e.name
+having COUNT(e.employee_id) >= 3)
+
+, cte2 as (select 
+r.review_id , r.employee_id , r.review_date , r.rating,cte.name,
+ROW_NUMBER() over(partition by r.employee_id order by review_date desc) as rnk
+from performance_reviews r join cte on r.employee_id = cte.employee_id)
+
+select employee_id , name ,
+ MAX(CASE WHEN rnk = 1 THEN rating END) - MAX(CASE WHEN rnk = 3 THEN rating END) as improvement_score
+ from cte2 
+where rnk <=3
+group by employee_id ,name 
+HAVING 
+    MAX(CASE WHEN rnk = 1 THEN rating END) > MAX(CASE WHEN rnk = 2 THEN rating END)
+    AND MAX(CASE WHEN rnk = 2 THEN rating END) > MAX(CASE WHEN rnk = 3 THEN rating END)
+order by improvement_score desc ,name asc
+-- Câu 36: Find COVID Recovery Patients
+-- Viết một bài toán tìm bệnh nhân đã hồi phục sau COVID-19 - những bệnh nhân có kết quả xét nghiệm dương tính nhưng sau đó xét nghiệm âm tính. 
+-- Một bệnh nhân được coi là đã hồi phục nếu họ có ít nhất một kết quả xét nghiệm dương tính và sau đó là ít nhất một kết quả xét nghiệm âm tính vào một ngày sau đó. 
+-- Tính thời gian hồi phục (tính bằng ngày) bằng hiệu số giữa kết quả xét nghiệm dương tính đầu tiên và kết quả xét nghiệm âm tính đầu tiên sau đó. 
+-- Chỉ bao gồm những bệnh nhân có cả kết quả xét nghiệm dương tính và âm tính.
+-- Trả về bảng kết quả được sắp xếp theo thời gian hồi phục tăng dần, sau đó theo tên bệnh nhân tăng dần.
+with FirstPositive as (
+select 
+    patient_id, 
+    MIN(test_date) as first_positive_date
+ from covid_tests 
+where result in ('Positive')
+group by patient_id )
+, 
+FirstNegativeAfterPos as (
+select t.patient_id ,
+            fp.first_positive_date,
+            MIN(t.test_date) as first_negative_date
+from covid_tests as t join FirstPositive as fp 
+on t.patient_id = fp.patient_id 
+where t.result = 'Negative' and fp.first_positive_date < t.test_date
+group by t.patient_id, fp.first_positive_date
+)
+select 
+    f.patient_id , 
+    p.patient_name , 
+    p.age , 
+    DATEDIFF(day,  first_positive_date,first_negative_date) as recovery_time 
+from FirstNegativeAfterPos as f join
+patients p on f.patient_id = p.patient_id
+order by recovery_time asc,p.patient_name asc
+--Câu 37 : Find Drivers with Improved Fuel Efficiency
+-- Viết một bài toán tìm những tài xế có hiệu suất nhiên liệu được cải thiện bằng cách so sánh hiệu suất nhiên liệu trung bình của họ trong nửa đầu năm với nửa cuối năm. 
+-- Tính hiệu suất nhiên liệu bằng công thức: quãng đường_km / nhiên liệu_tiêu thụ cho mỗi chuyến đi. 
+-- Nửa đầu năm: Tháng 1 đến tháng 6, Nửa cuối năm: Tháng 7 đến tháng 12 
+-- Chỉ bao gồm những tài xế có chuyến đi trong cả hai nửa năm. 
+-- Tính mức độ cải thiện hiệu suất bằng công thức: (trung bình nửa cuối năm - trung bình nửa đầu năm). 
+-- Làm tròn tất cả các kết quả đến 2 chữ số thập phân. 
+-- Trả về bảng kết quả được sắp xếp theo mức độ cải thiện hiệu suất giảm dần, sau đó theo tên tài xế tăng dần.
+with FirstHalf as (select driver_id , avg(distance_km*1.0/fuel_consumed) as first_half_avg
+ 
+from trips 
+WHERE MONTH(trip_date) BETWEEN 1 AND 6
+group by driver_id 
+)
+, SecondHalf as (
+ select driver_id , avg(distance_km*1.0/fuel_consumed) as second_half_avg
+from trips 
+WHERE MONTH(trip_date) BETWEEN 7 AND 12
+group by driver_id
+ 
+)
+select fh.driver_id ,d.driver_name ,ROUND(fh.first_half_avg,2)as first_half_avg , ROUND(sh.second_half_avg,2) as second_half_avg, 
+ROUND(sh.second_half_avg - fh.first_half_avg*1.0,2) as efficiency_improvement
+ from 
+FirstHalf fh join SecondHalf sh on fh.driver_id = sh.driver_id and fh.first_half_avg < sh.second_half_avg join drivers d on sh.driver_id = d.driver_id
+
+order by efficiency_improvement desc , d.driver_name
+--C2:
+WITH DriverEfficiency AS (
+    SELECT 
+        t.driver_id,
+        d.driver_name,
+        -- Tính trung bình nửa đầu năm (Tháng 1 -> 6)
+        AVG(CASE WHEN MONTH(t.trip_date) BETWEEN 1 AND 6 THEN t.distance_km * 1.0 / t.fuel_consumed END) AS first_half_avg,
+        -- Tính trung bình nửa cuối năm (Tháng 7 -> 12)
+        AVG(CASE WHEN MONTH(t.trip_date) BETWEEN 7 AND 12 THEN t.distance_km * 1.0 / t.fuel_consumed END) AS second_half_avg
+    FROM trips t
+    JOIN drivers d ON t.driver_id = d.driver_id
+    GROUP BY t.driver_id, d.driver_name
+    HAVING 
+        -- Đảm bảo tài xế có chuyến đi trong CẢ HAI nửa năm
+        COUNT(CASE WHEN MONTH(t.trip_date) BETWEEN 1 AND 6 THEN 1 END) > 0
+        AND COUNT(CASE WHEN MONTH(t.trip_date) BETWEEN 7 AND 12 THEN 1 END) > 0
+)
+SELECT 
+    driver_id,
+    driver_name,
+    ROUND(first_half_avg, 2) AS first_half_avg,
+    ROUND(second_half_avg, 2) AS second_half_avg,
+    ROUND(second_half_avg - first_half_avg, 2) AS efficiency_improvement
+FROM DriverEfficiency
+WHERE second_half_avg > first_half_avg -- Chỉ lấy những tài xế CÓ CẢI THIỆN
+ORDER BY 
+    efficiency_improvement DESC, 
+    driver_name ASC;
+--Câu 38: Find Overbooked Employees 
+-- Viết một bài toán tìm nhân viên dành nhiều thời gian họp - những nhân viên dành hơn 50% thời gian làm việc cho các cuộc họp trong bất kỳ tuần nào. Giả sử một tuần làm việc tiêu chuẩn là 40 giờ. 
+-- Tính tổng số giờ họp của mỗi nhân viên mỗi tuần (Thứ Hai đến Chủ Nhật).
+-- Một nhân viên được coi là dành nhiều thời gian họp nếu số giờ họp hàng tuần của họ > 20 giờ (50% của 40 giờ). 
+-- Đếm số tuần mỗi nhân viên dành nhiều thời gian họp. Chỉ bao gồm những nhân viên dành nhiều thời gian họp trong ít nhất 2 tuần. 
+-- Trả về bảng kết quả được sắp xếp theo số tuần dành nhiều thời gian họp theo thứ tự giảm dần, sau đó theo tên nhân viên theo thứ tự tăng dần.
+WITH WeeklyMeetings AS (
+    -- Bước 1 & 2: Gom nhóm theo nhân viên + tuần ISO, lọc tuần > 20 giờ họp
+    SELECT 
+        employee_id,
+        DATEPART(yyyy, meeting_date) AS meeting_year,
+        DATEPART(iso_week, meeting_date) AS meeting_week,
+        SUM(duration_hours) AS total_hours
+    FROM meetings
+    GROUP BY 
+        employee_id,
+        DATEPART(yyyy, meeting_date),
+        DATEPART(iso_week, meeting_date)
+    HAVING SUM(duration_hours) > 20
+),
+HeavyUsers AS (
+    -- Bước 3: Đếm số tuần meeting-heavy của mỗi nhân viên, lọc >= 2 tuần
+    SELECT 
+        employee_id,
+        COUNT(*) AS meeting_heavy_weeks
+    FROM WeeklyMeetings
+    GROUP BY employee_id
+    HAVING COUNT(*) >= 2
+)
+-- Bước 4: JOIN lấy thông tin nhân viên và sắp xếp kết quả
+SELECT 
+    e.employee_id,
+    e.employee_name,
+    e.department,
+    h.meeting_heavy_weeks
+FROM HeavyUsers h
+JOIN employees e ON h.employee_id = e.employee_id
+ORDER BY h.meeting_heavy_weeks DESC, e.employee_name ASC;
+-- Câu 39 : Find Stores with Inventory Imbalance
+-- Viết lời giải để tìm các cửa hàng có sự mất cân bằng hàng tồn kho - các cửa hàng mà sản phẩm đắt nhất có số lượng tồn kho thấp hơn sản phẩm rẻ nhất. 
+-- Đối với mỗi cửa hàng, hãy xác định sản phẩm đắt nhất (giá cao nhất) và số lượng của nó. 
+-- Đối với mỗi cửa hàng, hãy xác định sản phẩm rẻ nhất (giá thấp nhất) và số lượng của nó. 
+-- Một cửa hàng có sự mất cân bằng hàng tồn kho nếu số lượng của sản phẩm đắt nhất ít hơn số lượng của sản phẩm rẻ nhất. 
+-- Tính tỷ lệ mất cân bằng bằng công thức (số lượng sản phẩm rẻ nhất / số lượng sản phẩm đắt nhất). 
+-- Làm tròn tỷ lệ mất cân bằng đến 2 chữ số thập phân. 
+-- Chỉ bao gồm các cửa hàng có ít nhất 3 sản phẩm khác nhau. 
+-- Trả về bảng kết quả được sắp xếp theo tỷ lệ mất cân bằng giảm dần, sau đó theo tên cửa hàng tăng dần.
+
+with cte as (select store_id, product_name,quantity,price,
+ROW_NUMBER() over (partition by store_id order by price desc) as rnk_price
+from inventory )
+, 
+cte2 as (
+select store_id, product_name,quantity,price,
+ ROW_NUMBER() over (partition by store_id order by price asc) as rnk_price_min
+from inventory
+),
+cte_count AS (
+    SELECT 
+        store_id
+        
+    FROM inventory
+    GROUP BY store_id
+    HAVING COUNT(DISTINCT product_name) >= 3 -- Lọc trực tiếp các cửa hàng >= 3 sản phẩm
+)
+select 
+    cte.store_id,
+    s.store_name,
+    s.location,
+    cte.product_name as most_exp_product,
+    cte2.product_name as cheapest_product,
+     ROUND(cte2.quantity*1.0/cte.quantity,2) as imbalance_ratio
+ from cte join cte2
+ on cte.store_id = cte2.store_id 
+ and cte.rnk_price = 1 
+ and cte2.rnk_price_min =1 
+ join cte_count as c 
+ on cte.store_id = c.store_id 
+ join stores s on cte.store_id = s.store_id
+where cte.quantity < cte2.quantity 
