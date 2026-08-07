@@ -777,3 +777,116 @@ select
  on cte.store_id = c.store_id 
  join stores s on cte.store_id = s.store_id
 where cte.quantity < cte2.quantity 
+-- Câu 40 : Find Books with Polarized Opinions
+
+-- Viết một bài toán tìm sách có ý kiến ​​trái chiều - những cuốn sách nhận được cả điểm đánh giá rất cao và rất thấp từ các độc giả khác nhau. 
+-- Một cuốn sách được coi là có ý kiến ​​trái chiều nếu nó có ít nhất một điểm đánh giá ≥ 4 và ít nhất một điểm đánh giá ≤ 2. 
+-- Chỉ xem xét những cuốn sách có ít nhất 5 lần đọc. 
+-- Tính độ chênh lệch điểm đánh giá bằng công thức (điểm_đánh_cao_nhất - điểm_đánh_thấp_nhất). 
+-- Tính điểm phân cực bằng số điểm đánh giá cực đoan (điểm ≤ 2 hoặc ≥ 4) chia cho tổng số lần đọc.
+-- Chỉ bao gồm những cuốn sách có điểm phân cực ≥ 0,6 (ít nhất 60% điểm đánh giá cực đoan). 
+-- Trả về bảng kết quả được sắp xếp theo điểm phân cực giảm dần, sau đó theo tiêu đề giảm dần. Điểm phân cực nên được làm tròn đến 2 chữ số thập phân.
+--C1: tách ra 2 cte :  kiểm tra 5 lần đọc ,và có ít nhất điểm đánh giá >= 4 và <=2 , tính độ chênh lệch và cte 2 tính điểm phân cực
+with BookReading5 as (select book_id ,MAX(session_rating) - MIN(session_rating) as rating_spread
+from reading_sessions 
+group by book_id 
+having COUNT(book_id) >=5 and MAX(session_rating) >=4 and MIN(session_rating)<=2)
+, 
+cte as (select 
+    r.book_id,
+    ROUND(AVG(CASE WHEN r.session_rating <=2 or r.session_rating>=4 then 1.0 else 0.0 end ),2) as polarization_score,
+    b5.rating_spread
+from reading_sessions r join BookReading5 b5
+on r.book_id = b5.book_id
+group by r.book_id , b5.rating_spread
+having AVG(CASE WHEN r.session_rating <=2 or r.session_rating>=4 then 1.0 else 0.0 end ) >= 0.6)
+
+select 
+    c.book_id,
+    b.title,
+    b.author,
+    b.genre,
+    b.pages,
+    c.rating_spread,
+    c.polarization_score
+from cte as c 
+join books b 
+on c.book_id = b.book_id
+order by c.polarization_score desc, b.title desc
+--C2: chỉ join 1 lần bảng reading_sessions
+WITH PolarizationSummary AS (
+    SELECT 
+        book_id,
+        -- Độ chênh lệch = Max - Min
+        MAX(session_rating) - MIN(session_rating) AS rating_spread,
+        -- Điểm phân cực = Số điểm cực đoan / Tổng số lượt đọc
+        ROUND(
+            CAST(SUM(CASE WHEN session_rating <= 2 OR session_rating >= 4 THEN 1 ELSE 0 END) AS FLOAT) 
+            / COUNT(*), 
+            2
+        ) AS polarization_score
+    FROM reading_sessions
+    GROUP BY book_id
+    HAVING 
+        COUNT(*) >= 5                                              -- Ít nhất 5 lần đọc
+        AND MAX(session_rating) >= 4                               -- Có ít nhất 1 đánh giá >= 4
+        AND MIN(session_rating) <= 2                               -- Có ít nhất 1 đánh giá <= 2
+        AND CAST(SUM(CASE WHEN session_rating <= 2 OR session_rating >= 4 THEN 1 ELSE 0 END) AS FLOAT) 
+            / COUNT(*) >= 0.6                                     -- Điểm phân cực >= 0.6
+)
+SELECT 
+    p.book_id,
+    b.title,
+    b.author,
+    b.genre,
+    b.pages,
+    p.rating_spread,
+    p.polarization_score
+FROM PolarizationSummary p
+JOIN books b 
+    ON p.book_id = b.book_id
+ORDER BY 
+    p.polarization_score DESC,                                    -- Điểm phân cực giảm dần
+    b.title DESC;                                                 -- Tiêu đề giảm dần
+-- Câu 41: Find Loyal Customers
+-- Viết một giải pháp để tìm khách hàng trung thành. 
+-- Một khách hàng được coi là trung thành nếu họ đáp ứng TẤT CẢ các tiêu chí sau: 
+-- Đã thực hiện ít nhất 3 giao dịch mua hàng. 
+-- Đã hoạt động ít nhất 30 ngày. Tỷ lệ hoàn tiền của họ dưới 20%. 
+-- Tỷ lệ hoàn tiền là tỷ lệ các giao dịch được hoàn tiền, 
+-- được tính bằng số giao dịch hoàn tiền chia cho tổng số giao dịch (mua hàng cộng với hoàn tiền). 
+-- Trả về bảng kết quả được sắp xếp theo customer_id theo thứ tự tăng dần.
+
+select customer_id 
+from customer_transactions 
+group by customer_id 
+having COUNT(*) >= 3 and DATEDIFF(day, MIN(transaction_date),MAX(transaction_date)) >= 30
+and AVG(CASE WHEN transaction_type = 'refund' then 1.0 else 0.0 end)*100.0 <20 
+order by customer_id asc
+
+--Câu 41: Find Golden Hour Customers
+-- Viết một giải pháp để tìm khách hàng giờ vàng - những khách hàng thường xuyên đặt hàng trong giờ cao điểm và mang lại sự hài lòng cao. 
+-- Một khách hàng được coi là khách hàng giờ vàng nếu họ đáp ứng TẤT CẢ các tiêu chí sau: 
+-- Đã đặt ít nhất 3 đơn hàng. 
+-- Ít nhất 60% đơn hàng của họ được đặt trong giờ cao điểm (11:00-14:00 hoặc 18:00-21:00).
+-- Xếp hạng trung bình của họ cho các đơn hàng đã đánh giá ít nhất là 4.0, làm tròn đến 2 chữ số thập phân. 
+-- Đã đánh giá ít nhất 50% đơn hàng của họ. 
+-- Trả về bảng kết quả được sắp xếp theo xếp hạng trung bình giảm dần, sau đó theo mã khách hàng giảm dần.
+
+select 
+    customer_id ,
+    COUNT(*) as total_orders ,
+    ROUND(AVG(
+     CASE when  CAST(order_timestamp AS TIME) BETWEEN '11:00:00' AND '14:00:00' 
+        or  CAST(order_timestamp AS TIME) BETWEEN '18:00:00' AND '21:00:00' then 1.0 else 0.0 end )  *100.0,0)
+        as peak_hour_percentage,
+     ROUND(AVG(CAST(order_rating AS FLOAT)), 2)  as average_rating
+from restaurant_orders 
+group by customer_id 
+having COUNT(*)>2 
+and AVG(
+     CASE when  CAST(order_timestamp AS TIME) BETWEEN '11:00:00' AND '14:00:00' 
+        or  CAST(order_timestamp AS TIME) BETWEEN '18:00:00' AND '21:00:00' then 1.0 else 0.0 end ) >= 0.6
+and AVG ( CASE WHEN order_rating is not null then 1.0 else 0.0 end) >=0.5
+and ROUND(AVG(CAST(order_rating AS FLOAT)), 2) >= 4.0
+order by average_rating desc , customer_id desc
