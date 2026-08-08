@@ -890,3 +890,80 @@ and AVG(
 and AVG ( CASE WHEN order_rating is not null then 1.0 else 0.0 end) >=0.5
 and ROUND(AVG(CAST(order_rating AS FLOAT)), 2) >= 4.0
 order by average_rating desc , customer_id desc
+--Câu 42:
+--C1:
+-- Viết giải pháp để tìm Khách hàng có nguy cơ hủy đăng ký - những người dùng có dấu hiệu cảnh báo trước khi hủy. 
+-- Một người dùng được coi là khách hàng có nguy cơ hủy đăng ký nếu họ đáp ứng TẤT CẢ các tiêu chí sau: 
+-- Hiện đang có đăng ký hoạt động (sự kiện cuối cùng của họ không phải là hủy). 
+-- Đã thực hiện ít nhất một lần hạ cấp gói đăng ký trong lịch sử đăng ký của họ. 
+-- Doanh thu của gói hiện tại thấp hơn 50% so với doanh thu tối đa của gói trước đây. 
+-- Đã là người đăng ký ít nhất 60 ngày. 
+-- Trả về bảng kết quả được sắp xếp theo số ngày đăng ký giảm dần, sau đó theo ID người dùng tăng dần.
+
+with cte as (select user_id, event_date,event_type , monthly_amount,plan_name,
+ROW_NUMBER() over (partition by user_id order by event_date desc) rnk_date_desc
+from subscription_events)
+, cte2 as (
+select  user_id,monthly_amount,plan_name from cte
+where rnk_date_desc = 1 and event_type != 'cancel')
+select 
+    s.user_id,
+    cte2.plan_name as current_plan,
+    MIN(cte2.monthly_amount) as current_monthly_amount,
+    MAX(s.monthly_amount) as max_historical_amount,
+    DATEDIFF(day,MIN(event_date),MAX(event_date)) as days_as_subscriber
+    
+from cte2 join subscription_events s on cte2.user_id = s.user_id
+group by s.user_id,cte2.plan_name
+having COUNT(CASE WHEN event_type='downgrade' then 1 end) >0 
+and DATEDIFF(day,MIN(event_date),MAX(event_date)) >= 60
+and MIN(cte2.monthly_amount)/MAX(s.monthly_amount)*100 < 50
+order by days_as_subscriber desc , s.user_id 
+--C2:
+WITH RankedEvents AS (
+    SELECT 
+        user_id,
+        event_date,
+        event_type,
+        plan_name,
+        monthly_amount,
+        -- Xếp hạng từ mới nhất đến cũ nhất
+        ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY event_date DESC) AS rnk_desc,
+        -- Lấy ngày đăng ký đầu tiên
+        MIN(event_date) OVER (PARTITION BY user_id) AS first_event_date
+    FROM subscription_events
+),
+UserStats AS (
+    SELECT 
+        user_id,
+        -- Thông tin sự kiện hiện tại (rnk_desc = 1)
+        MAX(CASE WHEN rnk_desc = 1 THEN plan_name END) AS current_plan,
+        MAX(CASE WHEN rnk_desc = 1 THEN monthly_amount END) AS current_monthly_amount,
+        MAX(CASE WHEN rnk_desc = 1 THEN event_type END) AS latest_event_type,
+        
+        -- Doanh thu tối đa của các gói TRƯỚC ĐÂY (rnk_desc > 1)
+        MAX(CASE WHEN rnk_desc > 1 THEN monthly_amount END) AS max_historical_amount,
+        
+        -- Số lần hạ cấp trong lịch sử
+        SUM(CASE WHEN event_type = 'downgrade' THEN 1 ELSE 0 END) AS downgrade_count,
+        
+        -- Số ngày đăng ký (từ sự kiện đầu tiên đến sự kiện mới nhất)
+        DATEDIFF(day, MIN(first_event_date), MAX(event_date)) AS days_as_subscriber
+    FROM RankedEvents
+    GROUP BY user_id
+)
+SELECT 
+    user_id,
+    current_plan,
+    current_monthly_amount,
+    max_historical_amount,
+    days_as_subscriber
+FROM UserStats
+WHERE 
+    latest_event_type != 'cancel'                                     -- 1. Đang hoạt động
+    AND downgrade_count > 0                                           -- 2. Đã từng hạ cấp
+    AND current_monthly_amount < (max_historical_amount * 0.5)        -- 3. Thấp hơn 50% max trước đây
+    AND days_as_subscriber >= 60                                      -- 4. Đăng ký >= 60 ngày
+ORDER BY 
+    days_as_subscriber DESC, 
+    user_id ASC;
