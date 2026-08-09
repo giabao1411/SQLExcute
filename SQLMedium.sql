@@ -890,7 +890,7 @@ and AVG(
 and AVG ( CASE WHEN order_rating is not null then 1.0 else 0.0 end) >=0.5
 and ROUND(AVG(CAST(order_rating AS FLOAT)), 2) >= 4.0
 order by average_rating desc , customer_id desc
---Câu 42:
+--Câu 42: Find Churn Risk Customers
 --C1:
 -- Viết giải pháp để tìm Khách hàng có nguy cơ hủy đăng ký - những người dùng có dấu hiệu cảnh báo trước khi hủy. 
 -- Một người dùng được coi là khách hàng có nguy cơ hủy đăng ký nếu họ đáp ứng TẤT CẢ các tiêu chí sau: 
@@ -955,7 +955,7 @@ UserStats AS (
 SELECT 
     user_id,
     current_plan,
-    current_monthly_amount,
+    cgit -add .t_monthly_amount,
     max_historical_amount,
     days_as_subscriber
 FROM UserStats
@@ -967,3 +967,26 @@ WHERE
 ORDER BY 
     days_as_subscriber DESC, 
     user_id ASC;
+--Câu 43 :  Find Emotionally Consistent Users
+-- Viết một giải pháp để xác định người dùng có tính nhất quán về mặt cảm xúc dựa trên các yêu cầu sau:
+--  Đối với mỗi người dùng, hãy đếm tổng số phản ứng mà họ đã đưa ra. 
+--  Chỉ bao gồm những người dùng đã phản ứng với ít nhất 5 nội dung khác nhau. 
+--  Một người dùng được coi là nhất quán về mặt cảm xúc nếu ít nhất 60% phản ứng của họ thuộc cùng một loại.
+-- Trả về bảng kết quả được sắp xếp theo tỷ lệ phản ứng (reaction_ratio) giảm dần và sau đó theo ID người dùng (user_id) tăng dần. Lưu ý: Tỷ lệ phản ứng (reaction_ratio) cần được làm tròn đến 2 chữ số thập phân.
+with cte as (
+    select 
+    user_id ,
+    COUNT(reaction) as total_reaction
+from reactions 
+group by user_id 
+having count(distinct content_id ) >4)
+,cte2 as (
+select reaction,user_id ,COUNT(reaction) as total_reaction_type
+from reactions 
+group by reaction ,user_id)
+
+select cte.user_id , cte2.reaction as dominant_reaction, ROUND(cte2.total_reaction_type*1.0/cte.total_reaction,2) as reaction_ratio from 
+cte join cte2 on 
+cte.user_id = cte2.user_id 
+where cte2.total_reaction_type*1.0/cte.total_reaction >=0.6
+order by reaction_ratio desc , cte.user_id asc
