@@ -138,4 +138,36 @@ SELECT
         ) AS 'Cancellation Rate'
     FROM TbUsersNotBanned
     GROUP BY request_at
+--Câu 5: 
+-- Viết chương trình để hiển thị các bản ghi có từ ba hàng trở lên với ID liên tiếp, và số người trong mỗi hàng lớn hơn hoặc bằng 100. Trả về bảng kết quả được sắp xếp theo ngày truy cập theo thứ tự tăng dần. Định dạng kết quả được thể hiện trong ví dụ sau.
+with cte as (select 
+    id, 
+    LEAD(id,1) over(order by id asc) as next,
+    Lead(id,2) over(order by id asc) as next2
+    from Stadium 
+    where people >=100)
+ , cte2 as (  select id ,
+    next,next2
+    from cte where id=next-1 and id = next2-2 )
+
+select distinct s.id,s.visit_date,s.people from stadium s join cte2 on s.id = cte2.id or s.id = cte2.next or s.id =cte2.next2
+    order by s.id asc
+    --C2 : id-row_number(): tách từng nhóm nếu liên tiếp thì nằm trong 1 nhóm nếu không liên tiếp bị tách ra 1 nhóm khác 
+    WITH Filtered AS (
+    SELECT 
+        id, 
+        visit_date, 
+        people,
+        id - ROW_NUMBER() OVER (ORDER BY id ASC) AS grp --gộp nhóm liên tiếp
+    FROM Stadium
+    WHERE people >= 100
+),
+Grouped AS (
+    SELECT *, COUNT(*) OVER (PARTITION BY grp) AS cnt --đếm số lượng trong nhóm đó 
+    FROM Filtered
+)
+SELECT id, visit_date, people
+FROM Grouped
+where cnt >=3 --nhóm nào có hơn 3 dòng thì lấy giá trị
+order by id
 
