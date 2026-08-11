@@ -138,7 +138,7 @@ SELECT
         ) AS 'Cancellation Rate'
     FROM TbUsersNotBanned
     GROUP BY request_at
---Câu 5: 
+--Câu 5: Human Traffic of Stadium
 -- Viết chương trình để hiển thị các bản ghi có từ ba hàng trở lên với ID liên tiếp, và số người trong mỗi hàng lớn hơn hoặc bằng 100. Trả về bảng kết quả được sắp xếp theo ngày truy cập theo thứ tự tăng dần. Định dạng kết quả được thể hiện trong ví dụ sau.
 with cte as (select 
     id, 
@@ -170,4 +170,59 @@ SELECT id, visit_date, people
 FROM Grouped
 where cnt >=3 --nhóm nào có hơn 3 dòng thì lấy giá trị
 order by id
+--Câu 6: Find Category Recommendation Pairs
+-- Amazon muốn hiểu rõ hành vi mua sắm trên các danh mục sản phẩm. 
+-- Hãy viết một giải pháp cho bài toán: Tìm tất cả các cặp danh mục (trong đó danh mục 1 < danh mục 2) 
+-- Đối với mỗi cặp danh mục, xác định số lượng khách hàng duy nhất đã mua sản phẩm từ cả hai danh mục. 
+-- Một cặp danh mục được coi là có thể báo cáo nếu có ít nhất 3 khách hàng khác nhau đã mua sản phẩm từ cả hai danh mục. 
+-- Trả về bảng kết quả gồm các cặp danh mục có thể báo cáo được sắp xếp theo số lượng khách hàng giảm dần, và trong trường hợp có số lượng bằng nhau, sắp xếp theo danh mục 1 tăng dần theo thứ tự từ điển, sau đó theo danh mục 2 tăng dần.
+with cte as (
+    select distinct
+        pp.user_id,
+        pi.category
+        from ProductPurchases pp join ProductInfo pi 
+        on pp.product_id = pi.product_id 
+
+)
+SELECT 
+    c1.category AS category1,
+    c2.category AS category2,
+    COUNT(c1.user_id) AS customer_count
+FROM cte c1
+JOIN cte c2 
+    ON c1.user_id = c2.user_id 
+   AND c1.category < c2.category
+GROUP BY c1.category, c2.category
+HAVING COUNT(c1.user_id) >= 3
+ORDER BY 
+    customer_count DESC, 
+    category1 ASC, 
+    category2 ASC;
+--Câu 7 : Find Zombie Sessions
+-- Viết một giải pháp để xác định các phiên "ma", tức là các phiên mà người dùng có vẻ hoạt động nhưng lại thể hiện các hành vi bất thường. 
+-- Một phiên được coi là phiên "ma" nếu đáp ứng TẤT CẢ các tiêu chí sau: 
+-- Thời lượng phiên hơn 30 phút. 
+-- Có ít nhất 5 sự kiện cuộn trang. 
+-- Tỷ lệ nhấp chuột trên cuộn trang nhỏ hơn 0,20. 
+-- Không có giao dịch mua nào được thực hiện trong phiên đó. 
+-- Trả về bảng kết quả được sắp xếp theo số lần cuộn trang giảm dần, sau đó theo ID phiên tăng dần.
+with cte as (select user_id,
+        session_id,
+        DATEDIFF(minute,MIN(event_timestamp),MAX(event_timestamp)) as minute,
+        SUM(CASE WHEN event_type= 'scroll'then 1 else 0 end) as count_scroll,
+        SUM(CASE WHEN event_type='click' then 1  else 0 end) as count_click,
+        SUM(Case when event_type='purchase' then 1 else 0 end) as count_purchase
+
+from app_events 
+group by user_id , session_id)
+select session_id ,
+        user_id ,
+        minute as session_duration_minutes,
+        count_scroll as scroll_count
+from cte 
+where minute > 30
+and count_scroll >= 5
+and count_click*1.0/count_scroll,2 < 0.20
+and count_purchase = 0
+order by scroll_count desc , session_id asc
 
