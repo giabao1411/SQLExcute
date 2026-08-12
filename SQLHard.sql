@@ -225,4 +225,68 @@ and count_scroll >= 5
 and count_click*1.0/count_scroll,2 < 0.20
 and count_purchase = 0
 order by scroll_count desc , session_id asc
-
+--Câu 8: Find Invalid IP Addresses
+-- Viết chương trình để tìm các địa chỉ IP không hợp lệ. 
+-- Một địa chỉ IPv4 không hợp lệ nếu đáp ứng bất kỳ điều kiện nào sau đây: 
+-- Chứa các số lớn hơn 255 trong bất kỳ octet nào
+--  Có số 0 đứng đầu trong bất kỳ octet nào (ví dụ: 01.02.03.04) 
+--  Có ít hơn hoặc nhiều hơn 4 octet 
+--  Trả về bảng kết quả được sắp xếp theo invalid_count và ip theo thứ tự giảm dần.
+SELECT 
+    ip,
+    COUNT(*) AS invalid_count
+FROM logs
+WHERE 
+    -- 1. Lỗi không đúng 4 octets (không đúng 3 dấu chấm)
+    LEN(ip) - LEN(REPLACE(ip, '.', '')) <> 3
+    
+    -- 2. Lỗi ký tự không hợp lệ hoặc chứa leading zeros (ví dụ '01', '00')
+    OR PARSENAME(ip, 4) LIKE '%[^0-9]%' OR (LEN(PARSENAME(ip, 4)) > 1 AND PARSENAME(ip, 4) LIKE '0%')
+    OR PARSENAME(ip, 3) LIKE '%[^0-9]%' OR (LEN(PARSENAME(ip, 3)) > 1 AND PARSENAME(ip, 3) LIKE '0%')
+    OR PARSENAME(ip, 2) LIKE '%[^0-9]%' OR (LEN(PARSENAME(ip, 2)) > 1 AND PARSENAME(ip, 2) LIKE '0%')
+    OR PARSENAME(ip, 1) LIKE '%[^0-9]%' OR (LEN(PARSENAME(ip, 1)) > 1 AND PARSENAME(ip, 1) LIKE '0%')
+    
+    -- 3. Lỗi octet vượt quá 255
+    OR CAST(PARSENAME(ip, 4) AS INT) > 255
+    OR CAST(PARSENAME(ip, 3) AS INT) > 255
+    OR CAST(PARSENAME(ip, 2) AS INT) > 255
+    OR CAST(PARSENAME(ip, 1) AS INT) > 255
+GROUP BY ip
+ORDER BY 
+    invalid_count DESC,
+    ip DESC;
+--Câu 9: Most Common Course Pairs
+-- Viết một giải pháp để xác định lộ trình thành thạo kỹ năng bằng cách phân tích trình tự hoàn thành khóa học của những sinh viên xuất sắc: 
+-- Chỉ xem xét những sinh viên xuất sắc (những sinh viên đã hoàn thành ít nhất 5 khóa học với điểm trung bình từ 4 trở lên). 
+-- Đối với mỗi sinh viên xuất sắc, hãy xác định trình tự các khóa học mà họ đã hoàn thành theo thứ tự thời gian. 
+-- Tìm tất cả các cặp khóa học liên tiếp (Khóa A → Khóa B) mà những sinh viên này đã học. 
+-- Trả về tần suất của các cặp khóa học, xác định những chuyển đổi khóa học nào phổ biến nhất trong số những sinh viên đạt thành tích cao. 
+-- Trả về bảng kết quả được sắp xếp theo tần suất của các cặp khóa học theo thứ tự giảm dần và sau đó theo tên khóa học đầu tiên và tên khóa học thứ hai theo thứ tự tăng dần.
+WITH HighAchievers AS (
+    SELECT user_id
+    FROM course_completions
+    GROUP BY user_id
+    HAVING COUNT(DISTINCT course_id) >= 5 
+       AND AVG(CAST(course_rating AS DECIMAL(3,2))) >= 4.0
+),
+CourseSequences AS (
+    SELECT 
+        c.course_name AS first_course,
+        LEAD(c.course_name) OVER (
+            PARTITION BY c.user_id 
+            ORDER BY c.completion_date ASC, c.course_id ASC
+        ) AS second_course
+    FROM course_completions c
+    INNER JOIN HighAchievers h ON c.user_id = h.user_id
+)
+SELECT 
+    first_course,
+    second_course,
+    COUNT(*) AS transition_count
+FROM CourseSequences
+WHERE second_course IS NOT NULL
+GROUP BY first_course, second_course
+ORDER BY 
+    transition_count DESC,
+    first_course ASC,
+    second_course ASC;
