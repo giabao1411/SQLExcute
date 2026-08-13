@@ -290,3 +290,87 @@ ORDER BY
     transition_count DESC,
     first_course ASC,
     second_course ASC;
+--Câu 10:
+WITH RankedSessions AS (
+    SELECT 
+        student_id,
+        subject,
+        session_date,
+        hours_studied,
+        LAG(session_date) OVER (PARTITION BY student_id ORDER BY session_date) AS prev_date
+    FROM study_sessions
+),
+IslandChain AS (
+    SELECT 
+        student_id,
+        subject,
+        session_date,
+        hours_studied,
+        SUM(CASE WHEN DATEDIFF(day, prev_date, session_date) > 2 THEN 1 ELSE 0 END) 
+            OVER (PARTITION BY student_id ORDER BY session_date) AS chain_id
+    FROM RankedSessions
+),
+SequenceData AS (
+    SELECT 
+        student_id,
+        chain_id,
+        subject,
+        session_date,
+        hours_studied,
+        ROW_NUMBER() OVER (PARTITION BY student_id, chain_id ORDER BY session_date) AS pos
+    FROM IslandChain
+),
+-- Tách riêng đếm số môn duy nhất (unique_in_cycle) bằng GROUP BY để tránh lỗi DISTINCT OVER
+UniqueSubjectCount AS (
+    SELECT 
+        student_id, 
+        chain_id, 
+        COUNT(DISTINCT subject) AS total_unique_subjects,
+        COUNT(*) AS total_sessions,
+        SUM(hours_studied) AS total_hours
+    FROM SequenceData
+    GROUP BY student_id, chain_id
+),
+PossibleCycles AS (
+    SELECT 
+        s1.student_id,
+        s1.chain_id,
+        k_table.k AS cycle_length,
+        u.total_unique_subjects,
+        u.total_sessions,
+        u.total_hours
+    FROM SequenceData s1
+    JOIN UniqueSubjectCount u 
+      ON s1.student_id = u.student_id AND s1.chain_id = u.chain_id
+    CROSS JOIN (VALUES (3), (4), (5), (6), (7), (8), (9), (10)) AS k_table(k)
+    LEFT JOIN SequenceData s2 
+        ON s1.student_id = s2.student_id 
+       AND s1.chain_id = s2.chain_id 
+       AND s1.pos = s2.pos + k_table.k
+    WHERE k_table.k >= 3
+      AND (s1.pos <= k_table.k OR s1.subject = s2.subject)
+)
+SELECT 
+    p.student_id,
+    st.student_name,
+    p.cycle_length,
+    p.total_study_hours
+FROM (
+    SELECT 
+        student_id,
+        cycle_length,
+        MAX(total_hours) AS total_study_hours,
+        ROW_NUMBER() OVER (
+            PARTITION BY student_id 
+            ORDER BY cycle_length DESC, MAX(total_hours) DESC
+        ) AS rn
+    FROM PossibleCycles
+    GROUP BY student_id, chain_id, cycle_length, total_unique_subjects, total_sessions
+    HAVING total_unique_subjects >= cycle_length
+       AND total_sessions >= 2 * cycle_length
+       AND total_sessions % cycle_length = 0
+       AND COUNT(*) = total_sessions
+) p
+JOIN students st ON p.student_id = st.student_id
+WHERE p.rn = 1
+ORDER BY p.cycle_length DESC, p.total_study_hours DESC;
