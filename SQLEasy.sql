@@ -538,3 +538,17 @@ from prompts
 group by user_id 
 having COUNT(prompt) >= 3 and MAX(tokens) > AVG(tokens*1.0)
 order by avg_tokens desc , user_id
+-- Câu 98: Histogram of Tweets
+with cte as (SELECT user_id ,COUNT(user_id) count FROM tweets
+where YEAR(tweet_date) = 2022
+group by user_id)
+
+select count as tweet_bucket, COUNT(user_id) as user_num from cte 
+group by count
+-- Câu 99: Data Science Skills
+with cte as (SELECT candidate_id,SUM(CASE WHEN skill in ('Python','Tableau','PostgreSQL') then 1 else 0 end) as count FROM candidates
+GROUP by candidate_id 
+having SUM(CASE WHEN skill in ('Python','Tableau','PostgreSQL') then 1 else 0 end) >2)
+
+select candidate_id from cte 
+order by candidate_id;
