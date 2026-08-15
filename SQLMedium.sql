@@ -989,4 +989,11 @@ select cte.user_id , cte2.reaction as dominant_reaction, ROUND(cte2.total_reacti
 cte join cte2 on 
 cte.user_id = cte2.user_id 
 where cte2.total_reaction_type*1.0/cte.total_reaction >=0.6
-order by reaction_ratio desc , cte.user_id asc
+order by reaction_ratio desc , cte.user_id 
+-- Câu 43: Training Count
+select t.user_id, u.username  , t.training_date , COUNT(training_id) as training_count
+from users as u right join training_details as t 
+on u.user_id = t.user_id
+group by t.user_id , t.training_date
+having COUNT(training_id) > 1
+order by training_date asc, training_count desc,t.user_id 
