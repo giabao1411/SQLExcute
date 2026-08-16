@@ -552,3 +552,107 @@ having SUM(CASE WHEN skill in ('Python','Tableau','PostgreSQL') then 1 else 0 en
 
 select candidate_id from cte 
 order by candidate_id;
+-- Câu 100 : Page With No Likes
+SELECT page_id FROM pages
+where page_id not in (select page_id from page_likes WHERE page_id IS NOT NULL)
+-- Câu 101 : Unfinished Parts
+SELECT part, assembly_step FROM parts_assembly
+where finish_date is null
+-- Câu 102: Laptop vs Mobile Viewership
+select 
+ SUM( CASE when device_type='laptop' then 1 else 0 end) as laptop_views,
+SUM( Case when device_type in ('tablet','phone') then 1 else 0 end ) as mobile_views
+from viewership
+-- Câu 103: Average Post Hiatus
+SELECT user_id,DATEDIFF(MAX(post_date),MIN(post_date)) as days_between FROM posts
+where year(post_date)=2021
+group by user_id
+having count(post_id) > 1
+-- Câu 104: Teams Power Users
+select sender_id , COUNT(message_id) as message_count
+from messages
+where sent_date BETWEEN '2022-08-01 00:00:00' and '2022-08-31 23:59:59'
+group by sender_id 
+order by message_count desc
+LIMIT 2
+-- Câu 105: Duplicate Job Listings
+with cte as (SELECT company_id , title,description, COUNT(job_id) as count
+FROM job_listings
+group by company_id , title,description
+having COUNT(job_id)>1)
+select COUNT(distinct company_id ) as duplicate_companies from cte
+-- Câu 106: Cities With Completed Trades
+SELECT 
+  users.city, 
+  COUNT(trades.order_id) AS total_orders 
+FROM trades 
+INNER JOIN users 
+  ON trades.user_id = users.user_id 
+WHERE trades.status = 'Completed' 
+GROUP BY users.city 
+ORDER BY total_orders DESC
+LIMIT 3;
+-- Câu 107: Average Review Ratings
+SELECT EXTRACT(MONTH FROM submit_date) as mth,product_id as product, ROUND(avg(stars),2) as avg_stars FROM reviews
+GROUP by product_id , EXTRACT(MONTH FROM submit_date)
+order by mth,product
+-- Câu 108: Final Account Balance
+SELECT account_id ,
+SUM(CASE WHEN transaction_type ='Deposit' then amount else -amount end) as final_balance
+FROM transactions
+GROUP BY account_id
+-- Câu 109: App Click-through Rate (CTR)
+SELECT app_id ,
+ROUND(SUM(CASE WHEN event_type = 'click' then 1 else 0 end)*100.0/SUM(CASE WHEN event_type = 'impression' then 1 else 0 end),2) 
+as ctr
+FROM events
+where EXTRACT(YEAR FROM timestamp) =2022
+group by app_id
+--Câu 110: Second Day Confirmation
+SELECT distinct  e.user_id FROM emails e join texts t 
+on e.email_id = t.email_id 
+where DATEDIFF(t.action_date,e.signup_date) =1 and t.signup_action = 'Confirmed'
+--Câu 111: IBM db2 Product Analytics
+with cte as (SELECT e.employee_id , COUNT(distinct q.query_id) FROM  employees e left join queries q 
+on e.employee_id = q.employee_id and q.query_starttime BETWEEN '2023-07-01 00:00:00' and '2023-09-30 23:59:59'
+group by e.employee_id)
+select count as unique_queries  ,
+COUNT(employee_id)as employee_count 
+from cte 
+group by count
+order by count
+--Câu 112: Cards Issued Difference
+SELECT card_name, MAX(issued_amount) - MIN(issued_amount) as difference FROM monthly_cards_issued
+group by card_name
+order by difference desc
+--Câu 113: Compressed Mean
+SELECT CAST(SUM(order_occurrences*item_count)/SUM(order_occurrences) as decimal (12,1)) as mean FROM items_per_order
+--Câu 114: Pharmacy Analytics (Part 1)
+SELECT drug , total_sales - cogs  as total_profit FROM pharmacy_sales
+order by total_profit desc
+limit 3
+--Câu 115: 
+with cte as (SELECT manufacturer, total_sales - cogs  as loss
+FROM pharmacy_sales
+where total_sales - cogs < 0)
+select manufacturer,COUNT(manufacturer) as drug_count , SUM(ABS(loss)) as total_loss 
+from cte 
+group by manufacturer
+order by total_loss desc
+--C2 :
+SELECT 
+  manufacturer,
+  COUNT(drug) AS drug_count,
+  SUM(cogs - total_sales) AS total_loss
+FROM pharmacy_sales
+WHERE total_sales < cogs
+GROUP BY manufacturer
+ORDER BY total_loss DESC;
+--Câu 116: Pharmacy Analytics (Part 3)
+SELECT manufacturer, CONCAT('$', ROUND(SUM(total_sales) / 1000000.0, 0), ' million') as sales_mil  FROM pharmacy_sales
+group by manufacturer
+order by SUM(total_sales) desc, manufacturer asc;
+--Câu 117: Patient Support Analysis (Part 1)
+select COUNT(*) from (SELECT policy_holder_id FROM callers
+group by policy_holder_id 
+having COUNT(case_id) > 2) as cte
