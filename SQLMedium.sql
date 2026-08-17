@@ -997,3 +997,45 @@ on u.user_id = t.user_id
 group by t.user_id , t.training_date
 having COUNT(training_id) > 1
 order by training_date asc, training_count desc,t.user_id 
+--Câu 44: User's Third Transaction
+with cte as (SELECT user_id , spend , transaction_date,
+ROW_NUMBER() OVER(partition by user_id order by transaction_date asc) as rnk
+FROM transactions)
+select user_id , spend, transaction_date 
+from cte 
+where rnk = 3
+--Câu 45: Second Highest Salary
+SELECT salary as second_highest_salary
+FROM (select salary ,
+ROW_NUMBER() OVER(order by salary desc) as rnk_salary
+from employee
+) as trans_emp
+where trans_emp.rnk_salary = 2
+--Câu 46: Sending vs. Opening Snaps
+SELECT age_bucket ,
+ROUND(SUM(case when activity_type = 'send' then time_spent else 0 end) *100.0/SUM(time_spent),2) as send_perc,
+ROUND(SUM(case when activity_type = 'open' then time_spent else 0 end) *100.0/SUM(time_spent),2) as open_perc
+
+FROM activities as act join age_breakdown as age 
+on act.user_id = age.user_id 
+where act.activity_type in('open','send')
+group by age.age_bucket 
+--Câu 47: Tweets' Rolling Averages
+SELECT
+    user_id,
+    tweet_date,
+    ROUND(AVG(tweet_count) OVER (PARTITION BY user_id ORDER BY tweet_date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 2) AS rolling_avg_3d
+FROM
+    tweets;
+--Câu 48: Highest-Grossing Items
+SELECT 
+  category, 
+  product, 
+  total_spend 
+  from(
+select category,product , SUM(spend) as total_spend,
+ROW_NUMBER() OVER(partition by category ORDER by sum(spend) desc) rnk
+from product_spend where YEAR(transaction_date) =2022
+group by category,product ) as ranked_spending
+
+where ranked_spending.rnk <=2
