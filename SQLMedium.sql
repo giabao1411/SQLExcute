@@ -1039,3 +1039,40 @@ from product_spend where YEAR(transaction_date) =2022
 group by category,product ) as ranked_spending
 
 where ranked_spending.rnk <=2
+--Câu 49: Top Three Salaries
+with cte as (SELECT d.department_name , 
+e.name, e.salary,
+DENSE_RANK() over(partition by e.department_id order by e.salary desc) as rnk 
+FROM employee e join department d 
+ON e.department_id = d.department_id)
+SELECT department_name , 
+name, salary
+from cte 
+where rnk < 4
+order by department_name asc, salary desc, name asc
+--Câu 50: Signup Activation Rate
+SELECT  ROUND(COUNT(t.email_id)*1.0/COUNT(DISTINCT e.email_id),2
+) as activation_rate
+from emails e left join texts t 
+on e.email_id = t.email_id and t.signup_action = 'Confirmed'
+--Câu 51: Spotify Streaming History
+with cte as 
+(SELECT 
+  user_id ,
+  song_id ,
+  COUNT(*) as total_weekly
+FROM songs_weekly  
+where listen_time <='2022-08-04 23:59:59'
+group by user_id ,song_id
+
+UNION ALL
+
+SELECT 
+    user_id, 
+    song_id, 
+    song_plays
+  FROM songs_history)
+select user_id , song_id,SUM(total_weekly) as song_plays
+from cte 
+group by user_id , song_id
+order by song_plays desc
