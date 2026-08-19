@@ -1076,3 +1076,46 @@ select user_id , song_id,SUM(total_weekly) as song_plays
 from cte 
 group by user_id , song_id
 order by song_plays desc
+--Câu 52: Supercloud Customer
+WITH cte as (
+select COUNT(DISTINCT product_category) as total_category FROM products
+)
+
+SELECT c.customer_id FROM customer_contracts c
+join products p on c.product_id = p.product_id
+group by c.customer_id 
+having COUNT(DISTINCT p.product_category) = (select total_category from cte)
+--Câu 53 : Odd and Even Measurements
+with cte as (SELECT measurement_id , measurement_value, measurement_time ,
+ROW_NUMBER() over(partition by CAST(measurement_time as date ) order by measurement_time asc) as rnk
+FROM measurements)
+select DATE_TRUNC('day', measurement_time) as measurement_day,
+SUM(Case when rnk % 2 !=0 then measurement_value else 0.0 end ) as odd_sum,
+SUM(Case when rnk % 2 =0 then measurement_value else 0.0 end) as even_sum
+from cte 
+group by DATE_TRUNC('day',measurement_time)
+order by measurement_day
+--Câu 54: Swapped Food Delivery
+SELECT 
+CASE WHEN 
+ (order_id = (select MAX(order_id) from orders)) and order_id % 2!=0 then order_id
+ WHEN order_id % 2 =0 then order_id -1
+ ELSE  order_id + 1 end as corrected_order_id ,item
+FROM orders 
+order by corrected_order_id 
+--Câu 55: FAANG Stock Min-Max (Part 1)
+with cte as (SELECT ticker,TO_CHAR(date, 'Mon-YYYY') AS month ,
+open,
+DENSE_RANK() over(partition by ticker order by open desc) as rnk_hightopen
+FROM stock_prices)
+,cte2 as (SELECT ticker,TO_CHAR(date, 'Mon-YYYY') AS month ,
+open,
+DENSE_RANK() over (partition by ticker order by open asc) as rnk_lowestopen
+FROM stock_prices)
+select c1.ticker,c1.month as highest_mth, c1.open as highest_open,
+c2.month as lowest_mth,
+c2.open as lowest_open
+
+from cte c1 join cte2 c2 on c1.ticker = c2.ticker  and  
+ c1.rnk_hightopen =1 and c2.rnk_lowestopen =1
+ order by c1.ticker
