@@ -1119,3 +1119,71 @@ c2.open as lowest_open
 from cte c1 join cte2 c2 on c1.ticker = c2.ticker  and  
  c1.rnk_hightopen =1 and c2.rnk_lowestopen =1
  order by c1.ticker
+ --Câu 56: Best-Selling Product
+ with cte as (SELECT p.category_name , p.product_name , s.sales_quantity , s.rating,
+DENSE_RANK() OVER(partition by p.category_name order by s.sales_quantity desc , s.rating desc) rnk
+FROM products p join product_sales s 
+ON p.product_id = s.product_id )
+select category_name , product_name 
+from cte 
+where rnk =1 
+order by category_name
+-- Câu 57: User Shopping Sprees
+WITH deduplicated AS (
+   
+    SELECT DISTINCT 
+        user_id, 
+        transaction_date::date AS transaction_date
+    FROM transactions
+),
+ranked_transactions AS (
+  
+    SELECT 
+        user_id,
+        transaction_date,
+       
+        transaction_date - (ROW_NUMBER() OVER (
+            PARTITION BY user_id 
+            ORDER BY transaction_date
+        ))::int AS spree_group
+    FROM deduplicated
+),
+spree_summary AS (
+   
+    SELECT 
+        user_id,
+       
+        COUNT(*) AS consecutive_days
+    FROM ranked_transactions
+    GROUP BY user_id, spree_group
+)
+
+SELECT 
+    user_id
+FROM spree_summary
+WHERE consecutive_days >= 3
+ORDER BY user_id;
+--Câu 58: Histogram of Users and Purchases
+with cte as (SELECT user_id ,
+transaction_date,
+DENSE_RANK() over(partition by user_id order by transaction_date desc) rnk_trandate
+FROM user_transactions)
+select MAX(transaction_date) as transaction_date , user_id , COUNT(user_id) as purchase_count
+from cte 
+where rnk_trandate=1
+group by user_id
+order by transaction_date
+--Câu 59: Compressed Mode
+SELECT item_count as mode 
+FROM items_per_order
+where order_occurrences = (Select MAX(order_occurrences) from items_per_order)
+order by item_count
+--Câu 60: Card Launch Success
+select card_name,issued_amount 
+from (
+    SELECT issue_month,issue_year,card_name,issued_amount,
+     ROW_NUMBER() over(partition by card_name order by issue_year, issue_month) as rnk 
+     FROM monthly_cards_issued )
+as tran
+where tran.rnk =1
+order by issued_amount desc
