@@ -374,3 +374,69 @@ FROM (
 JOIN students st ON p.student_id = st.student_id
 WHERE p.rn = 1
 ORDER BY p.cycle_length DESC, p.total_study_hours DESC;
+--Câu 11: Active User Retention
+SELECT 
+  EXTRACT(MONTH FROM curr_month.event_date) AS month,
+  COUNT(DISTINCT curr_month.user_id) AS monthly_active_users
+FROM user_actions AS curr_month
+JOIN user_actions AS last_month
+  ON curr_month.user_id = last_month.user_id
+  AND EXTRACT(MONTH FROM last_month.event_date) = EXTRACT(MONTH FROM curr_month.event_date) - 1
+  AND EXTRACT(YEAR FROM last_month.event_date) = EXTRACT(YEAR FROM curr_month.event_date)
+WHERE EXTRACT(MONTH FROM curr_month.event_date) = 7
+  AND EXTRACT(YEAR FROM curr_month.event_date) = 2022 
+GROUP BY EXTRACT(MONTH FROM curr_month.event_date)
+--Câu 12 :Y-on-Y Growth Rate
+--C1: dùng self join
+WITH yearly_summary AS (
+  
+  SELECT 
+    product_id,
+    EXTRACT(YEAR FROM transaction_date) AS txn_year,
+    SUM(spend) AS total_spend
+  FROM user_transactions
+  GROUP BY product_id, EXTRACT(YEAR FROM transaction_date)
+),
+
+ cte as (SELECT curr_year.product_id,curr_year.txn_year AS current_year,
+    curr_year.total_spend AS curr_spend,
+    prev_year.total_spend AS prev_spend
+  FROM yearly_summary curr_year
+  LEFT JOIN yearly_summary prev_year 
+    ON curr_year.product_id = prev_year.product_id
+   AND curr_year.txn_year - 1 = prev_year.txn_year
+   )
+SELECT 
+  current_year,
+  product_id,
+  curr_spend,
+  prev_spend AS prev_year_spend,
+  ROUND((curr_spend - prev_spend) * 100.0 / prev_spend, 2) AS yoy_rate
+FROM cte
+ORDER BY product_id, current_year
+--C2: dùng LAG window function
+WITH yearly_spend AS (
+  SELECT 
+    EXTRACT(YEAR FROM transaction_date) AS year,
+    product_id,
+    SUM(spend) AS curr_year_spend
+  FROM user_transactions
+  GROUP BY 
+    EXTRACT(YEAR FROM transaction_date),
+    product_id
+)
+
+SELECT 
+  year,
+  product_id,
+  curr_year_spend,
+  LAG(curr_year_spend) OVER (
+    PARTITION BY product_id 
+    ORDER BY year
+  ) AS prev_year_spend,
+  ROUND(
+    (curr_year_spend - LAG(curr_year_spend) OVER (PARTITION BY product_id ORDER BY year)) 
+    * 100.0 
+    / LAG(curr_year_spend) OVER (PARTITION BY product_id ORDER BY year)
+  , 2) AS yoy_rate
+FROM yearly_spend;
