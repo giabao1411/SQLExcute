@@ -1187,3 +1187,19 @@ from (
 as tran
 where tran.rnk =1
 order by issued_amount desc
+--Câu 61: International Call Percentage
+SELECT  
+  ROUND(100.0*SUM(CASE 
+    WHEN caller.country_id <> receiver.country_id THEN 1 ELSE NULL END)/ COUNT(*),1) AS international_call_pct
+  
+FROM phone_calls AS calls
+LEFT JOIN phone_info AS caller
+  ON calls.caller_id = caller.caller_id
+LEFT JOIN phone_info AS receiver
+  ON calls.receiver_id = receiver.caller_id;
+--Câu 62: Patient Support Analysis (Part 2)
+SELECT ROUND(
+    100.0*SUM(
+        CASE WHEN call_category ='n/a' or call_category is NULL then 1 else NULL end)
+        /COUNT(*),1) as uncategorised_call_pct  
+FROM callers
