@@ -440,3 +440,56 @@ SELECT
     / LAG(curr_year_spend) OVER (PARTITION BY product_id ORDER BY year)
   , 2) AS yoy_rate
 FROM yearly_spend;
+--Câu 13: Maximize Prime Item Inventory
+WITH summary AS (
+    -- Bước 1: Tính kích thước và số lượng mặt hàng của 1 combo batch theo từng loại
+    SELECT 
+        item_type,
+        SUM(square_footage) AS total_sqft,
+        COUNT(*) AS item_count
+    FROM inventory
+    GROUP BY item_type
+),
+prime_calc AS (
+    -- Bước 2: Tính số lô Prime tối đa và diện tích Prime chiếm dụng
+    SELECT 
+        item_type,
+        total_sqft,
+        item_count,
+        FLOOR(500000 / total_sqft) AS prime_batches,
+        FLOOR(500000 / total_sqft) * item_count AS prime_item_count,
+        FLOOR(500000 / total_sqft) * total_sqft AS prime_occupied_sqft
+    FROM summary
+    WHERE item_type = 'prime_eligible'
+)
+-- Bước 3: Ghép kết quả đầu ra cho cả 2 nhóm prime_eligible và not_prime
+SELECT 
+    'prime_eligible' AS item_type,
+    prime_item_count AS item_count
+FROM prime_calc
+
+UNION ALL
+
+SELECT 
+    'not_prime' AS item_type,
+    FLOOR((500000 - (SELECT prime_occupied_sqft FROM prime_calc)) / total_sqft) * item_count AS item_count
+FROM summary
+WHERE item_type = 'not_prime';
+--Câu 14: Median Google Search Frequency
+WITH summary AS (
+  SELECT 
+    searches,
+    num_users,
+    -- Tổng dồn từ thấp đến cao
+    SUM(num_users) OVER (ORDER BY searches ASC) AS cum_asc,
+    -- Tổng dồn từ cao đến thấp
+    SUM(num_users) OVER (ORDER BY searches DESC) AS cum_desc,
+    -- Tổng tất cả người dùng
+    SUM(num_users) OVER () AS total_users
+  FROM search_frequency
+)
+SELECT 
+  ROUND(AVG(searches)::numeric, 1) AS median
+FROM summary
+WHERE cum_asc >= total_users / 2.0
+  AND cum_desc >= total_users / 2.0
