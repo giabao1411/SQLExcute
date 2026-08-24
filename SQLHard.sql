@@ -493,3 +493,12 @@ SELECT
 FROM summary
 WHERE cum_asc >= total_users / 2.0
   AND cum_desc >= total_users / 2.0
+--Câu 14: Advertiser Status
+SELECT COALESCE(a.user_id,d.user_id) as user_id
+,
+CASE WHEN d.paid is null then 'CHURN' 
+WHEN d.paid IS NOT NULL AND a.status IN ('NEW','EXISTING','RESURRECT') THEN 'EXISTING'
+    WHEN d.paid IS NOT NULL AND a.status = 'CHURN' THEN 'RESURRECT'
+    WHEN d.paid IS NOT NULL AND a.status IS NULL THEN 'NEW' end as new_status FROM advertiser as a full outer join daily_pay d 
+on a.user_id = d.user_id
+order by user_id
