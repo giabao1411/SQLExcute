@@ -502,3 +502,29 @@ WHEN d.paid IS NOT NULL AND a.status IN ('NEW','EXISTING','RESURRECT') THEN 'EXI
     WHEN d.paid IS NOT NULL AND a.status IS NULL THEN 'NEW' end as new_status FROM advertiser as a full outer join daily_pay d 
 on a.user_id = d.user_id
 order by user_id
+--Câu 15: 3-Topping Pizzas
+SELECT 
+  CONCAT(p1.topping_name, ',', p2.topping_name, ',', p3.topping_name) AS pizza,
+  p1.ingredient_cost + p2.ingredient_cost + p3.ingredient_cost AS total_cost
+FROM pizza_toppings AS p1
+INNER JOIN pizza_toppings AS p2
+  ON p1.topping_name < p2.topping_name 
+INNER JOIN pizza_toppings AS p3
+  ON p2.topping_name < p3.topping_name 
+ORDER BY total_cost DESC, pizza;
+--Câu 16: Consecutive Filing Years
+-- dùng island and gap
+with island_taxes as (SELECT * ,
+EXTRACT(YEAR from filing_date) - (ROW_NUMBER() over(partition by user_id order by  EXTRACT(YEAR FROM filing_date)))::int as group_year
+FROM filed_taxes
+WHERE product LIKE N'%TurboTax%' )
+,gap_taxes as (
+SELECT user_id ,
+COUNT(*) as consecutive_year
+from island_taxes 
+group by user_id, group_year
+)
+select distinct user_id 
+from gap_taxes
+where consecutive_year >=3
+order by user_id
