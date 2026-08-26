@@ -528,3 +528,50 @@ select distinct user_id
 from gap_taxes
 where consecutive_year >=3
 order by user_id
+--Câu 17: Marketing Touch Streak
+WITH week_events AS (
+  SELECT 
+    event_id,
+    contact_id,
+    event_type,
+    DATE_TRUNC('week', event_date) AS current_week,
+    LAG(DATE_TRUNC('week', event_date)) OVER (
+      PARTITION BY contact_id 
+      ORDER BY DATE_TRUNC('week', event_date)
+    ) AS lag_week,
+    LEAD(DATE_TRUNC('week', event_date)) OVER (
+      PARTITION BY contact_id 
+      ORDER BY DATE_TRUNC('week', event_date)
+    ) AS lead_week
+  FROM marketing_touches
+),
+valid_contacts AS (
+  SELECT DISTINCT contact_id
+  FROM week_events
+  WHERE 
+    
+    (lag_week = current_week - INTERVAL '1 week' 
+     AND lead_week = current_week + INTERVAL '1 week')
+)
+SELECT DISTINCT c.email
+FROM valid_contacts v
+JOIN marketing_touches m ON v.contact_id = m.contact_id
+JOIN crm_contacts c ON v.contact_id = c.contact_id
+WHERE m.event_type = 'trial_request'
+--Câu 18: Patient Support Analysis (Part 3)
+WITH NextCallInfo AS (
+  SELECT 
+    policy_holder_id,
+    call_date,
+    LEAD(call_date) OVER (
+      PARTITION BY policy_holder_id 
+      ORDER BY call_date
+    ) AS next_call_date
+  FROM callers
+)
+
+SELECT 
+  COUNT(DISTINCT policy_holder_id) AS policy_holder_count
+FROM NextCallInfo
+WHERE next_call_date IS NOT NULL
+  AND next_call_date - call_date <= INTERVAL '7 days'
