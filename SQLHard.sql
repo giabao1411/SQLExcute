@@ -575,3 +575,18 @@ SELECT
 FROM NextCallInfo
 WHERE next_call_date IS NOT NULL
   AND next_call_date - call_date <= INTERVAL '7 days'
+-- Câu 19: Patient Support Analysis (Part 4)
+with cte as (SELECT COUNT(case_id) as curr_mth_calls,
+EXTRACT(YEAR from call_date) as yr,
+EXTRACT(MONTH from call_date) as mth,
+LAG(COUNT(case_id)) over(order by EXTRACT(YEAR from call_date),  EXTRACT(MONTH from call_date)) as prev_mth_calls
+FROM callers
+where call_duration_secs > 300
+GROUP BY
+EXTRACT(YEAR from call_date),
+EXTRACT(MONTH from call_date))
+select yr,
+mth,
+ROUND((curr_mth_calls-prev_mth_calls)*100.0/prev_mth_calls,1) as long_calls_growth_pct
+from cte
+order by yr, mth
