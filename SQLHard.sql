@@ -590,3 +590,14 @@ mth,
 ROUND((curr_mth_calls-prev_mth_calls)*100.0/prev_mth_calls,1) as long_calls_growth_pct
 from cte
 order by yr, mth
+--Câu 20: Repeated Payments
+with cte as (
+SELECT
+     transaction_id , merchant_id, credit_card_id, amount, transaction_timestamp,
+LAG(transaction_timestamp) over(partition by  merchant_id, credit_card_id, amount 
+ORDER BY transaction_timestamp ) as prev_transaction_time
+FROM transactions)
+select COUNT(*) as payment_count 
+from cte 
+where prev_transaction_time is not null 
+and  EXTRACT(EPOCH FROM (transaction_timestamp - prev_transaction_time)) / 60 <=10
