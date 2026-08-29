@@ -601,3 +601,46 @@ select COUNT(*) as payment_count
 from cte 
 where prev_transaction_time is not null 
 and  EXTRACT(EPOCH FROM (transaction_timestamp - prev_transaction_time)) / 60 <=10
+-- Câu 21: Reactivated Users
+--C1:
+SELECT 
+    EXTRACT(MONTH FROM curr_month.login_date) AS mth,
+    COUNT(DISTINCT curr_month.user_id) AS reactivated_users
+FROM user_logins AS curr_month
+WHERE NOT EXISTS (
+    SELECT 1 
+    FROM user_logins AS last_month
+    WHERE last_month.user_id = curr_month.user_id
+      AND EXTRACT(MONTH FROM last_month.login_date) = EXTRACT(MONTH FROM curr_month.login_date - INTERVAL '1 month')
+      AND EXTRACT(YEAR FROM last_month.login_date) = EXTRACT(YEAR FROM curr_month.login_date - INTERVAL '1 month')
+)
+GROUP BY EXTRACT(MONTH FROM curr_month.login_date)
+ORDER BY mth;
+--C2: dùng LAG()
+WITH user_active_months AS (
+    -- Bước 1: Lấy các tháng duy nhất mà user có hoạt động
+    SELECT DISTINCT
+        user_id,
+        DATE_TRUNC('month', login_date) AS active_month
+    FROM user_logins
+),
+user_gaps AS (
+    -- Bước 2: Lấy tháng hoạt động liền trước của user đó
+    SELECT 
+        user_id,
+        active_month,
+        LAG(active_month) OVER (
+            PARTITION BY user_id 
+            ORDER BY active_month
+        ) AS prev_active_month
+    FROM user_active_months
+)
+-- Bước 3: Lọc những trường hợp khoảng cách > 1 tháng (hoặc không có tháng trước đó)
+SELECT 
+    EXTRACT(MONTH FROM active_month) AS mth,
+    COUNT(DISTINCT user_id) AS reactivated_users
+FROM user_gaps
+WHERE prev_active_month IS NULL 
+   OR active_month > prev_active_month + INTERVAL '1 month'
+GROUP BY active_month
+ORDER BY mth;
