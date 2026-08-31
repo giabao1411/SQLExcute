@@ -655,3 +655,39 @@ JOIN employees AS senior_managers
   ON managers.manager_id = senior_managers.emp_id
 GROUP BY managers.manager_name
 ORDER BY direct_reportees DESC;
+--C2:
+WITH managers AS (
+    -- Bước 1: Tìm danh sách tất cả các manager_id (những người có ít nhất 1 cấp dưới)
+    SELECT DISTINCT manager_id
+    FROM employees
+    WHERE manager_id IS NOT NULL
+),
+
+potential_senior_managers AS (
+    -- Bước 2a: Tìm người quản lý ít nhất 1 Manager khác
+    SELECT manager_id AS sm_id
+    FROM employees
+    WHERE emp_id IN (SELECT manager_id FROM managers)
+    GROUP BY manager_id
+    HAVING COUNT(DISTINCT emp_id) >= 1
+),
+
+invalid_senior_managers AS (
+    -- Bước 2b: Loại các Senior Manager mà cấp dưới trực tiếp CŨNG LÀ một Senior Manager
+    SELECT DISTINCT manager_id AS sm_id
+    FROM employees
+    WHERE emp_id IN (SELECT sm_id FROM potential_senior_managers)
+)
+
+-- Bước 3: Đếm số lượng báo cáo trực tiếp cho từng Senior Manager hợp lệ
+SELECT 
+    manager_name AS senior_manager_name,
+    COUNT(emp_id) AS direct_reports_count
+FROM employees
+WHERE manager_id IN (
+    SELECT sm_id FROM potential_senior_managers
+    EXCEPT
+    SELECT sm_id FROM invalid_senior_managers
+)
+GROUP BY manager_id, manager_name
+ORDER BY direct_reports_count DESC, manager_name ASC;
