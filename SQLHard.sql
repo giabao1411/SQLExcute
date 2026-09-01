@@ -602,7 +602,7 @@ from cte
 where prev_transaction_time is not null 
 and  EXTRACT(EPOCH FROM (transaction_timestamp - prev_transaction_time)) / 60 <=10
 -- Câu 21: Reactivated Users
---C1:
+--C1: dùng not exists
 SELECT 
     EXTRACT(MONTH FROM curr_month.login_date) AS mth,
     COUNT(DISTINCT curr_month.user_id) AS reactivated_users
