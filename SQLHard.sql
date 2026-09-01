@@ -518,7 +518,8 @@ with island_taxes as (SELECT * ,
 EXTRACT(YEAR from filing_date) - (ROW_NUMBER() over(partition by user_id order by  EXTRACT(YEAR FROM filing_date)))::int as group_year
 FROM filed_taxes
 WHERE product LIKE N'%TurboTax%' )
-,gap_taxes as (
+,
+gap_taxes as (
 SELECT user_id ,
 COUNT(*) as consecutive_year
 from island_taxes 
