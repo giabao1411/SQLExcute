@@ -1203,3 +1203,8 @@ SELECT ROUND(
         CASE WHEN call_category ='n/a' or call_category is NULL then 1 else NULL end)
         /COUNT(*),1) as uncategorised_call_pct  
 FROM callers
+--Câu 63:
+SELECT distinct year(birth_date) as birth_year from patients order by birth_year
+--Câu 64:
+SELECT first_name from patients group by first_name having COUNT(*) =1
+order by first_name
