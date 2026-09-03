@@ -1208,3 +1208,9 @@ SELECT distinct year(birth_date) as birth_year from patients order by birth_year
 --Câu 64:
 SELECT first_name from patients group by first_name having COUNT(*) =1
 order by first_name
+--Câu 65: Show patient_id and first_name from patients where their first_name start and ends with 's' and is at least 6 characters long.
+SELECT patient_id,first_name FROM patients
+where len(first_name) >5 and lower(first_name) like '%s' and lower(first_name) like 's%'
+--Câu 66:
+SELECT p.patient_id,p.first_name,p.last_name FROM patients p join admissions a on p.patient_id = a.patient_id
+where a.diagnosis = 'Dementia'
