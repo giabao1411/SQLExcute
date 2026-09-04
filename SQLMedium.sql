@@ -1214,3 +1214,37 @@ where len(first_name) >5 and lower(first_name) like '%s' and lower(first_name) l
 --Câu 66:
 SELECT p.patient_id,p.first_name,p.last_name FROM patients p join admissions a on p.patient_id = a.patient_id
 where a.diagnosis = 'Dementia'
+--Câu 67:
+SELECT first_name  FROM patients
+order by LEN(first_name) , first_name
+--Câu 68:
+SELECT SUM(Case when gender = 'M' then 1 else 0 end) as male_count ,
+SUM(case when gender ='F' then 1 else 0 end) as female_count
+FROM patients
+--Câu 69:
+SELECT first_name,last_name,allergies
+FROM patients
+where allergies in ('Penicillin','Morphine')
+order by allergies,first_name,last_name
+--Câu 70:
+SELECT patient_id,diagnosis
+FROM admissions
+group by patient_id,diagnosis
+having COUNT(*)>1
+--Câu 71:
+SELECT city, COUNT(distinct patient_id) as num_patients
+FROM patients
+group by city
+order by num_patients desc,city
+--Câu 72:
+SELECT first_name,last_name,'Patient' as role
+FROM patients
+union all
+select first_name,last_name,'Doctor' as role
+from doctors
+--Câu 73:
+SELECT allergies,COUNT(patient_id) as total_diagnosis
+FROM patients
+where allergies is not null
+group by allergies
+order by total_diagnosis desc
