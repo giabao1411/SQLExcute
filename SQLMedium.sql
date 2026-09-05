@@ -1248,3 +1248,67 @@ FROM patients
 where allergies is not null
 group by allergies
 order by total_diagnosis desc
+--Câu 74:
+SELECT first_name,last_name,birth_date FROM patients
+where year(birth_date) >= 1970 and YEAR(birth_date) <1980
+order by birth_date
+--Câu 75:
+SELECT concat(upper(last_name),",",lower(first_name)) as new_name_format FROM patients
+order by first_name desc
+--Câu 76:
+SELECT province_id,SUM(height) as sum_height FROM patients
+group by province_id
+having SUM(height) >= 7000
+--Câu 77:
+SELECT
+  MAX(weight) - MIN(weight) as weight_delta
+FROM patients
+where last_name = 'Maroni'
+--Câu 78:
+select
+  DAY(admission_date) as day_number,
+  COUNT(admission_date) as number_of_admissions
+from admissions
+group by DAY(admission_date)
+order by number_of_admissions desc
+--Câu 79:
+SELECT *
+FROM admissions
+WHERE patient_id = 542
+ORDER BY admission_date DESC
+LIMIT 1
+--Câu 80:
+SELECT
+  patient_id,
+  attending_doctor_id,
+  diagnosis
+FROM admissions
+where
+  (
+    patient_id % 2 != 0
+    and attending_doctor_id in(1, 5, 19)
+  )
+  or (
+    attending_doctor_id LIKE '%2%'
+    and len(patient_id) = 3
+    )
+--Câu 81:
+SELECT
+  d.first_name,
+  d.last_name,
+  COUNT(*) admissions_total
+FROM admissions as a
+  join doctors d on a.attending_doctor_id = d.doctor_id
+group by d.doctor_id
+--Câu 82:
+SELECT
+  d.doctor_id,
+  CONCAT(d.first_name, " ", d.last_name) as full_name,
+  MIN(a.admission_date) as first_admission_date,
+  MAX(a.admission_date) as last_admission_date
+FROM admissions as a
+  join doctors d on a.attending_doctor_id = d.doctor_id
+group by
+  d.doctor_id,
+  d.first_name,
+  d.last_name
