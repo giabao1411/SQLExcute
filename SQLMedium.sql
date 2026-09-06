@@ -1312,3 +1312,38 @@ group by
   d.doctor_id,
   d.first_name,
   d.last_name
+--Câu 83:
+SELECT
+  pn.province_name,
+  COUNT(pa.patient_id) as patient_count
+FROM patients pa
+  join province_names pn on pa.province_id = pn.province_id
+group by pn.province_name
+order by patient_count desc
+--Câu 84:
+SELECT
+  CONCAT(pa.first_name, " ", pa.last_name) as patient_name,
+  ad.diagnosis as diagnosis,
+  CONCAT(d.first_name, " ", d.last_name) as doctor_name
+from patients pa
+  join admissions ad on pa.patient_id = ad.patient_id
+  join doctors d on ad.attending_doctor_id = d.doctor_id
+--Câu 85:
+select
+  first_name,
+  last_name,
+  COUNT(patient_id) as num_of_duplicates
+from patients
+group by
+  first_name,
+  last_name
+having COUNT(patient_id) > 1
+--Câu 86:
+select
+	CONCAT(first_name," ",last_name) as patient_name,
+    ROUND(height*1.0/30.48,1) as height,
+    round(weight*2.205,0) as weight,
+    birth_date,
+    CASE WHEN gender = 'F' THEN 'FEMALE' ELSE 'MALE' END as gender_type
+from
+	patients
