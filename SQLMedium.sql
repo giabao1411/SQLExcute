@@ -1347,3 +1347,24 @@ select
     CASE WHEN gender = 'F' THEN 'FEMALE' ELSE 'MALE' END as gender_type
 from
 	patients
+--Câu 87:
+select
+  p.patient_id,
+  p.first_name,
+  p.last_name
+from patients p
+  left join admissions a on p.patient_id = a.patient_id
+where a.patient_id is null
+--Câu 89:
+with cte as (
+    select
+      admission_date,
+      COUNT(patient_id) as visit_per_day
+    from admissions
+    group by admission_date
+  )
+select
+  MAX(visit_per_day) as max_visits,
+  MIN(visit_per_day) as min_visits,
+  ROUND(AVG(visit_per_day), 2) as average_visits
+from cte
