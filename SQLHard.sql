@@ -692,3 +692,42 @@ WHERE manager_id IN (
 )
 GROUP BY manager_id, manager_name
 ORDER BY direct_reports_count DESC, manager_name ASC;
+--Câu 23:
+SELECT
+  COUNT(weight) as patients_in_group,
+  floor(weight / 10) * 10 as weight_group
+FROM patients
+group by floor(weight / 10) * 10
+order by weight_group desc
+--Câu 24:
+SELECT
+  patient_id,
+  weight,
+  height,
+  CASE
+    when (weight / power((height / 100.0), 2)) >= 30 then 1
+    else 0
+  end as isObese
+FROM patients
+--Câu 25:
+select
+  p.patient_id,
+  p.first_name,
+  p.last_name,
+  d.specialty
+from patients p
+  join admissions a on p.patient_id = a.patient_id
+  join doctors d on a.attending_doctor_id = d.doctor_id
+where
+  a.diagnosis = 'Epilepsy'
+  and d.first_name = 'Lisa'
+--Câu 26:
+select
+  distinct p.patient_id,
+  CONCAT(
+    p.patient_id,
+    LEN(p.last_name),
+    year(birth_date)
+  ) as temp_password
+from patients p
+  join admissions a on p.patient_id = a.patient_id
