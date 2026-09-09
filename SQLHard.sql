@@ -731,3 +731,67 @@ select
   ) as temp_password
 from patients p
   join admissions a on p.patient_id = a.patient_id
+--Câu 27:
+with cte as (
+    select
+      *,
+      case
+        when patient_id % 2 = 0 then 'Yes'
+        else 'No'
+      end as insurance
+    from admissions
+  )
+select
+  insurance as has_insurance,
+  SUM(
+    CASE
+      WHEN insurance = 'No' THEN 50
+      ELSE 10
+    END
+  ) as cost_after_insurance
+from cte
+group by insurance
+--Câu 28:
+select pn.province_name
+from patients p
+  join province_names pn on p.province_id = pn.province_id
+group by pn.province_name
+having
+  SUM(
+    CASE
+      WHEN p.gender = 'M' then 1
+      else 0
+    end
+  ) > SUM(
+    CASE
+      when p.gender = 'F' THEN 1
+      else 0
+    end
+  )
+--Câu 29:
+SELECT *
+FROM patients
+where
+  first_name LIKE '__r%'
+  And gender = 'F'
+  AND month(birth_date) in(2, 5, 12)
+  and weight >= 60
+  and weight <= 80
+  and patient_id % 2 != 0
+  and city = 'Kingston'
+--Câu 30:
+SELECT
+  CONCAT(
+    ROUND(
+      (
+        COUNT(
+          CAse
+            when gender = 'M' then 1.0
+          end
+        ) * 1.0 / COUNT(gender)
+      ) * 100.0,
+      2
+    ),
+    '%'
+  ) as percent_of_male_patients
+FROM patients
