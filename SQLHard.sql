@@ -795,3 +795,30 @@ SELECT
     '%'
   ) as percent_of_male_patients
 FROM patients
+--Câu 31:
+with cte as (
+    SELECT
+      admission_date,
+      COUNT(*) as count_admission
+    FROM admissions
+    group by admission_date
+  )
+select
+  admission_date,
+  count_admission as admission_day,
+  count_admission - lag(count_admission) over(
+    order by
+      admission_date
+  ) as admission_count_change
+from cte
+--Câu 32:
+select province_name
+from province_names
+order by
+  (
+    case
+      when province_name = 'Ontario' then 0
+      else 1
+    end
+  ),
+  province_name asc
