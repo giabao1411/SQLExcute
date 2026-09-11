@@ -822,3 +822,17 @@ order by
     end
   ),
   province_name asc
+--Câu 33:
+SELECT
+  d.doctor_id,
+  CONCAT(d.first_name, " ", d.last_name) as doctor_name,
+  specialty,
+  year(a.admission_date) selected_year,
+  COUNT(a.patient_id) total_admissions
+FROM admissions a
+  RIGHT join doctors d on a.attending_doctor_id = d.doctor_id
+group by
+  year(a.admission_date),
+  d.doctor_id
+order by
+  doctor_id, selected_year
