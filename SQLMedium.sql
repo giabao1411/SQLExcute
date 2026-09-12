@@ -1368,3 +1368,23 @@ select
   MIN(visit_per_day) as min_visits,
   ROUND(AVG(visit_per_day), 2) as average_visits
 from cte
+--Câu 90:
+select
+  cte.patient_name,
+  admission_date,
+  cte.doctor_name
+from (
+    select
+      CONCAT(p.first_name, " ", p.last_name) as patient_name,
+      ROW_NUMBER() over(
+        partition by a.patient_id
+        order by
+          a.admission_date desc
+      ) as rnk,
+      a.admission_date,
+      concat(d.first_name, " ", d.last_name) as doctor_name
+    from patients p
+      JOIN admissions a on p.patient_id = a.patient_id
+      join doctors d on a.attending_doctor_id = d.doctor_id
+  ) as cte
+where rnk = 1
