@@ -836,3 +836,39 @@ group by
   d.doctor_id
 order by
   doctor_id, selected_year
+  --Câu 34 :
+  SELECT
+  e.first_name,
+  e.last_name,
+  COUNT(o.order_id) As num_orders,
+  (
+    CASE
+      WHEN o.shipped_date <= o.required_date THEN 'On Time'
+      WHEN o.shipped_date > o.required_date THEN 'Late'
+      WHEN o.shipped_date is null THEN 'Not Shipped'
+    END
+  ) AS shipped
+FROM orders o
+  JOIN employees e ON e.employee_id = o.employee_id
+GROUP BY
+  e.first_name,
+  e.last_name,
+  shipped
+ORDER BY
+  e.last_name,
+  e.first_name,
+  num_orders DESC
+--Câu 35:
+select
+  YEAR(o.order_date) as order_year,
+  ROUND(
+    SUM(
+      p.unit_price * 1.0 * od.quantity * od.discount
+    ),
+    2
+  ) as discount_amount
+from orders o
+  join order_details od on o.order_id = od.order_id
+  join products p on od.product_id = p.product_id
+GROUP BY YEAR(o.order_date)
+order by order_year desc
