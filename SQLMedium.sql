@@ -1388,3 +1388,38 @@ from (
       join doctors d on a.attending_doctor_id = d.doctor_id
   ) as cte
 where rnk = 1
+--Câu 91 :
+select
+  product_name,
+  company_name,
+  category_name
+from categories c
+  join products p on c.category_id = p.category_id
+  join suppliers s on p.supplier_id = s.supplier_id
+--Câu 92:
+select
+  category_name,
+  description
+from categories
+order by category_name
+--Câu 93:
+select
+  category_name,
+  ROUND(AVG(unit_price), 2) as average_unit_price
+from categories c
+  join products p on c.category_id = p.category_id
+group by category_name
+--Câu 94:
+select
+  city,
+  company_name,
+  contact_name,
+  'customers' as relationship
+from customers
+union 
+select
+  city,
+  company_name,
+  contact_name,
+  'suppliers' as relationship
+from suppliers
