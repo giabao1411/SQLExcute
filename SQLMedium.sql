@@ -1423,3 +1423,15 @@ select
   contact_name,
   'suppliers' as relationship
 from suppliers
+--Câu 95:
+select
+  YEAR(order_date) as order_year,
+  month(order_date) as order_month,
+  COUNT(*) as no_of_orders
+from orders
+group by
+  year(order_date),
+  month(order_date)
+order by
+  order_year,
+  order_month
