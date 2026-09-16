@@ -656,3 +656,23 @@ order by SUM(total_sales) desc, manufacturer asc;
 select COUNT(*) from (SELECT policy_holder_id FROM callers
 group by policy_holder_id 
 having COUNT(case_id) > 2) as cte
+--Câu 118:
+select
+  first_name,last_name,gender
+from patients
+where gender ='M'
+--Câu 119:
+select
+  first_name,last_name
+from patients
+where allergies is null
+--Câu 120:
+select
+  first_name
+from patients
+where first_name LIKE 'C%'
+--Câu 121:
+select
+  first_name,last_name
+from patients
+where weight between 100 and 120
