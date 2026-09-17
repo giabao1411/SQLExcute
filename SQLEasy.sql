@@ -676,3 +676,11 @@ select
   first_name,last_name
 from patients
 where weight between 100 and 120
+--Câu 122:
+update patients
+set allergies = 'NKA'
+where allergies is null
+--Câu 123:
+select
+  concat(first_name, ' ', last_name) as full_name
+from patients
