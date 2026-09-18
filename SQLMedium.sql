@@ -1435,3 +1435,68 @@ group by
 order by
   order_year,
   order_month
+--Câu 96:
+select c.customer_id
+from customer_contracts c
+  join products p on c.product_id = p.product_id
+group by c.customer_id
+having
+  COUNT(distinct p.product_category) = (
+    SELECT
+      COUNT(DISTINCT product_category)
+    FROM products
+  )
+--Câu 97: Top 5 Artists (Spotify)
+WITH artist_rankings AS (
+    SELECT 
+        a.artist_id,
+        a.artist_name,
+        COUNT(gsr.song_id) AS total_per_artist,
+        DENSE_RANK() OVER (ORDER BY COUNT(gsr.song_id) DESC) as rnk
+    FROM artists a 
+    JOIN songs s ON a.artist_id = s.artist_id 
+    JOIN global_song_rank gsr ON s.song_id = gsr.song_id
+    WHERE gsr.rank <= 10
+    GROUP BY a.artist_id, a.artist_name
+)
+SELECT 
+    artist_id,
+    artist_name,
+    total_per_artist
+FROM artist_rankings
+WHERE rnk <= 5;
+order by rnk asc , artist_name asc
+--Câu 98: International Call Percentage
+select 
+	ROUND(
+        COUNT(Case when caller.country_id != receiver.country_id then 1 else NULL end)*100.0/COUNT(pc.caller_id)
+        ,2)
+FROM phone_calls pc join phone_info caller on pc.caller_id = caller.caller_id 
+join phone_info receiver on pc.receiver_id = receiver.caller_id
+--Câu 99: Highest-Grossing Items
+with cte as (
+    select
+      category,
+      product,
+      SUM(spend) as total_spend,
+      DENSE_RANK() over(
+        partition category by
+        order by sum(spend) desc
+      ) as rnk
+    FROM product_spend
+    group by
+      category,
+      product
+  )
+select
+  category,
+  product,
+  total_spend
+from cte
+where rnk < 3
+--Câu 100: Highest Number of Products
+select user_id, COUNT(distinct product_id) as product_num
+from user_transactions
+group by user_id 
+having count(distinct product_id) >=10
+order by product_num desc
