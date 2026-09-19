@@ -1500,3 +1500,20 @@ from user_transactions
 group by user_id 
 having count(distinct product_id) >=10
 order by product_num desc
+--Câu 101: Compressed Mean
+select
+  ROUND(
+    SUM(item_count * order_occurrences) * 1.0 / SUM(order_occurrences),
+    2
+  )
+from items_per_order
+--Câu 102: Server Utilization Time
+with cte as (SELECT server_id,
+        status_time as start_time , 
+        LEAD(status_time) OVER(partition by server_id order by status_time) as stop_time,
+        session_status
+        
+FROM server_utilization)
+select ROUND(EXTRACT(epoch FROM SUM(stop_time - start_time)) / 86400,0)  as total_uptime_days
+from cte 
+where session_status = 'start'
