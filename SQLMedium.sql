@@ -1517,3 +1517,23 @@ FROM server_utilization)
 select ROUND(EXTRACT(epoch FROM SUM(stop_time - start_time)) / 86400,0)  as total_uptime_days
 from cte 
 where session_status = 'start'
+--Câu 103: Pharmacy Analytics (Part 3) - CVS Health
+select
+  manufacturer,
+  SUM(total_sales - cogs) as total_profit,
+  SUM(units_sold) as sum_units_sold
+from pharmacy_sales
+group by manufacturer
+order by
+  total_profit desc,
+  manufacturer
+--Câu 104: Rolling Average 3rd Order / Consecutive Transactions (Airbnb - Medium Premium)
+with cte as (select
+  user_id,
+  transaction_date,
+  LAG(transaction_date) over(partition by user_id order by transaction_date) as trans_prev_date
+  
+from transactions)
+select distinct user_id 
+from cte 
+where DATEDIFF(day,trans_prev_date,transaction_date) <=7
