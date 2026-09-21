@@ -1537,3 +1537,27 @@ from transactions)
 select distinct user_id 
 from cte 
 where DATEDIFF(day,trans_prev_date,transaction_date) <=7
+--Câu 105: 	
+Fill Missing Client Data
+WITH grouped_products AS (
+  SELECT 
+    product_id, 
+    category, 
+    name,
+    -- Tạo một "group id" tăng lên mỗi khi gặp dòng có category không null
+    COUNT(category) OVER (ORDER BY product_id) AS category_group
+  FROM products
+)
+SELECT 
+  product_id, 
+  -- Lấy giá trị đầu tiên của nhóm điền vào các chỗ trống NULL
+  FIRST_VALUE(category) OVER (PARTITION BY category_group ORDER BY product_id) AS category,
+  name
+FROM grouped_products;
+--Câu 106:
+
+select tran1.product_id , tran2.product_id,
+ COUNT(tran1.transaction_id)
+from transactions tran1 join transactions tran2 on tran1.transaction_id = tran2.transaction_id and 
+tran1.product_id < tran2.product_id
+group by tran1.product_id , tran2.product_id
