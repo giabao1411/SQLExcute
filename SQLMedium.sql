@@ -1561,3 +1561,40 @@ select tran1.product_id , tran2.product_id,
 from transactions tran1 join transactions tran2 on tran1.transaction_id = tran2.transaction_id and 
 tran1.product_id < tran2.product_id
 group by tran1.product_id , tran2.product_id
+--Câu 107:Booking Referral Source
+--C1:
+select top 1 referral_source 
+from bookings 
+group by referral_source
+order by COUNT(booking_id) desc
+--C2:
+select  referral_source 
+from ( select  referral_source ,
+DENSE_RANK() over( order by COUNT(booking_id) desc) rnk,
+from bookings
+group by referral_source
+) as cte 
+where cte.rnk = 1 
+--Câu 108: 2nd Ride Delay
+WITH cte AS (
+    SELECT
+        user_id,
+        request_timestamp,
+        accept_timestamp,
+        ROW_NUMBER() OVER (
+            PARTITION BY user_id
+            ORDER BY request_timestamp
+        ) AS rn
+    FROM trips
+),
+second_ride AS (
+    SELECT
+        user_id,
+        EXTRACT(EPOCH FROM (accept_timestamp - request_timestamp)) / 60.0
+            AS wait_time_minutes
+    FROM cte
+    WHERE rn = 2
+)
+SELECT
+    AVG(wait_time_minutes) AS avg_wait_time
+FROM second_ride;
