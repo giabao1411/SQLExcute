@@ -1598,3 +1598,24 @@ second_ride AS (
 SELECT
     AVG(wait_time_minutes) AS avg_wait_time
 FROM second_ride;
+-- Câu 109: Google Maps Flagged UGC
+select MONTH(c.content_date) ,
+    COUNT(distinct uf.content_id)*100.0/COUNT(distinct c.content_id)
+from users_flag uf right join content c on 
+uf.content_id = c.content_id
+group by MONTH(c.content_date)
+--Câu 110: LinkedIn Power Creators (Part 2)
+select user_id ,
+    SUM(likes) as total_like,
+    SUM(comments) as total_comment
+from posts
+group by user_id 
+having SUM(likes) + SUM(comments) > 100
+ORDER BY SUM(likes) + SUM(comments) DESC
+--Câu 111: Unique Money Transfer Relationships
+select COUNT(*)
+from (select sender_id , receiver_id
+from transfers 
+where sender_id < receiver_id
+group by sender_id, receiver_id
+) as cte 
