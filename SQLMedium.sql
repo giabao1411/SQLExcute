@@ -1619,3 +1619,12 @@ from transfers
 where sender_id < receiver_id
 group by sender_id, receiver_id
 ) as cte 
+--Câu 112: User Session Activity
+with cte as (select user_id ,
+    session_end - session_start as time_use
+from user_sessions
+where session_start is not null and session_end is not null),
+select user_id , avg(time_use)
+from cte 
+group by user_id
+
