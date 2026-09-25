@@ -1627,4 +1627,13 @@ where session_start is not null and session_end is not null),
 select user_id , avg(time_use)
 from cte 
 group by user_id
+--Câu 113: First Transaction
+select user_id ,
+        spend,
+        transaction_date
+from (select user_id,
+        spend,
+        transaction_date,
+        ROW_NUMBER() over(partition by user_id order by transaction_date) as rnk) as cte
+where cte.rnk = 1 
 
