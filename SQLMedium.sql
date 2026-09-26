@@ -1636,4 +1636,57 @@ from (select user_id,
         transaction_date,
         ROW_NUMBER() over(partition by user_id order by transaction_date) as rnk) as cte
 where cte.rnk = 1 
+--Câu 114: Email Table Transformation
+select id ,
+        case when email like '%@gmail.com' then email end as "gmail.com",
+        case when email like '%@yahoo.com' then email end as "yahoo.com"
+from 
+--Câu 115: Email Table Transformation Medium Pivot 
+SELECT
+    user_id,
+    MAX(CASE WHEN email_type = 'personal' THEN email END) AS personal,
+    MAX(CASE WHEN email_type = 'business' THEN email END) AS business,
+    MAX(CASE WHEN email_type = 'recovery' THEN email END) AS recovery
+FROM users
+GROUP BY user_id
+ORDER BY user_id;
+--Câu 116: Photoshop Revenue Analysis
+select customer_id ,
+        SUM(revenue)
+from adobe_transactions
+where customer_id in (select customer_id from adobe_transactions where product = 'Photoshop') and product != 'Photoshop'
+group by customer_id 
+order by customer_id
+--Câu 117: Consulting Bench Time
+with cte as (select employee_id,
+        project_id,
+        start_date,
+        end_date,
+    LEAD(start_date) over(partition by employee_id order by start_date) as start_date_next_project
+from projects)
+, cte2 as (select employee_id,
+        project_id,
+        extract (day from  (start_date_next_project - end_date)) as time_between
+from cte
+WHERE start_date_next_project IS NOT NULL)
+select 
+    AVG(time_between)
+    from cte2
+--C2:
+WITH cte AS (
+    SELECT
+        employee_id,
+        end_date,
+        LEAD(start_date) OVER (
+            PARTITION BY employee_id
+            ORDER BY start_date
+        ) AS next_start_date
+    FROM projects
+)
+SELECT
+    AVG(EXTRACT(DAY FROM (next_start_date - end_date))) AS average_bench_time
+FROM cte
+WHERE next_start_date IS NOT NULL;
+    
+
 
