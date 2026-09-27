@@ -1687,6 +1687,14 @@ SELECT
     AVG(EXTRACT(DAY FROM (next_start_date - end_date))) AS average_bench_time
 FROM cte
 WHERE next_start_date IS NOT NULL;
-    
-
-
+--Câu 118:
+with total_deal_emp as(
+    select employee_id ,SUM(deal_size) as total_deal
+    from deals 
+    group by employee_id
+)
+select employee_id,
+CASE WHEN t.total_deal >= ec.quota then ec.base + (ec.commission * ec.quota) + (t.total_deal-ec.quota)*(ec.comission + ec.accelerator)
+else ec.base + t.total_deal * ec.commission end as total_compensation
+from employee_contract ec join total_deal_emp t on ec.employee_id=t.employee_id
+order by total_compensation desc , ec.employee_id 
