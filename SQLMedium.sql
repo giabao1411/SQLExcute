@@ -1698,3 +1698,19 @@ CASE WHEN t.total_deal >= ec.quota then ec.base + (ec.commission * ec.quota) + (
 else ec.base + t.total_deal * ec.commission end as total_compensation
 from employee_contract ec join total_deal_emp t on ec.employee_id=t.employee_id
 order by total_compensation desc , ec.employee_id 
+--Câu 119: Average Deal Size (Part 2)
+WITH customer_segments AS (
+  SELECT 
+    customer_id,
+    CASE 
+      WHEN num_employees < 100 THEN 'SMB'
+      WHEN num_employees BETWEEN 100 AND 999 THEN 'Mid-Market'
+      ELSE 'Enterprise'
+    END AS market_segment
+  FROM customers
+)
+select seg.market_segment,
+ROUND(AVG(c.num_seats * c.yearly_seat_cost),2) as avaverage_deal_size
+from contracts c join customer_segments seg on c.customer_id = seg.customer_id
+group by seg.market_segment
+order by average_deal_size desc
