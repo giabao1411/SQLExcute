@@ -1714,3 +1714,17 @@ ROUND(AVG(c.num_seats * c.yearly_seat_cost),2) as avaverage_deal_size
 from contracts c join customer_segments seg on c.customer_id = seg.customer_id
 group by seg.market_segment
 order by average_deal_size desc
+--Câu 120: Cumulative Purchases by Product Type
+select order_date,
+        product_type,
+         SUM(quantity) over(partition by product_type order by order_date) as cum_purchased
+from amazon_purchases 
+    order by order_date 
+--Câu 121: Invalid Search Results
+select country,
+        SUM(num_search) as total_search,
+      ROUND(SUM((num_search * invalid_result_pct)/100.0)/SUM(num_search) *100.0,2) as invalid_searches_pct
+from search_category
+group by country
+
+
