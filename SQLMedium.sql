@@ -1726,5 +1726,29 @@ select country,
       ROUND(SUM((num_search * invalid_result_pct)/100.0)/SUM(num_search) *100.0,2) as invalid_searches_pct
 from search_category
 group by country
+--Câu 122: Compensation Outliers
+with avg_pay_emp as (
+  select title,
+          AVG(salary) as avg_pay_title
+  from employee_pay
+  group by title
+)
+select ep.employee_id,
+      ep.salary,
+     CASE when ep.salary > 2*avg.avg_pay_title then 'Overpaid' else 'Underpaid' end as status
+from employee_pay ep join avg_pay_emp avg on ep.title = avg.title
+where 2*ep.salary < avg.avg_pay_title or ep.salary > 2*avg.avg_pay_title
+--Câu 123: FAANG Stock Monthly Change (Part 2)
+with stock_prices_lag as (select 
+  ticker,
+  date,
+  close,
+  LAG(close) over(partition by ticker order by date ) close_lag
+from stock_prices)
+select ticker,
+      to_char(date,'Mon-YYYY'),
+      close-close_lag as monthly_change
+from stock_prices_lag
+where close_lag is not null
 
 
