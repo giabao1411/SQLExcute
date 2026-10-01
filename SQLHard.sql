@@ -872,3 +872,23 @@ from orders o
   join products p on od.product_id = p.product_id
 GROUP BY YEAR(o.order_date)
 order by order_year desc
+--Câu 36: Compressed Median
+SELECT DISTINCT PERCENTILE_CONT(0.5) 
+    WITHIN GROUP (ORDER BY salary) 
+    OVER () AS MedianValue
+FROM Alibaba_Employees;
+--Câu 37: Average Vacant Days
+with tbl_nxt_booking as (select listing_id,
+      booking_start,
+      booking_end,
+      LEAD(booking_start) over(partition by listing_id order by booking_start) as next_booking
+from airbnb_search_details)
+, tbl_date_pending as  (select listing_id,
+      DATEDIFF(day, booking_end, next_booking) as day_pending
+from tbl_nxt_booking
+where next_booking is not null)
+select listing_id ,
+      AVG(day_pending) as average_vacant_days
+      from tbl_date_pending
+
+
