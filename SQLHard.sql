@@ -890,5 +890,58 @@ where next_booking is not null)
 select listing_id ,
       AVG(day_pending) as average_vacant_days
       from tbl_date_pending
-
+--Câu 38: Etsy — Same Week Purchases
+SELECT
+    ROUND(
+        COUNT(DISTINCT s.user_id) * 100.0
+        / (SELECT COUNT(*) FROM signups),
+        2
+    ) AS same_week_purchases_pct
+FROM signups s
+JOIN user_purchases u
+    ON u.user_id = s.user_id
+   AND u.purchase_date >= s.signup_date
+   AND u.purchase_date <= s.signup_date + INTERVAL '7 days'
+--Câu 39: Apple — Follow-Up Airpod Percentage
+with cte as (
+  select COUNT(distinct e_buy_ip.user_id) as total_buy_ip_airpod
+from events e_buy_ip join events e_buy_airpod on 
+e_buy_ip.user_id = e_buy_airpod.user_id 
+and e_buy_ip.event_type='Buy IPhone' 
+and e_buy_airpod.event_type='Buy Airpods' 
+and e_buy_ip.event_date < e_buy_airpod.event_date
+) 
+select ROUND(total_buy_ip_airpod*100.0/
+        (select  COUNT(distinct Case when event_type='Buy IPhone' then user_id end) 
+        from events)
+        ,2) as percentage
+from cte
+--Câu 40: FAANG Underperforming Stocks Part 3
+WITH monthly_close AS (
+    SELECT
+        ticker,
+        DATE_TRUNC('month', date) AS month,
+        close,
+        ROW_NUMBER() OVER (
+            PARTITION BY ticker, DATE_TRUNC('month', date)
+            ORDER BY date DESC
+        ) AS rn
+    FROM stock_prices
+),
+monthly_price AS (
+    SELECT
+        ticker,
+        month,
+        close,
+        LAG(close) OVER (
+            PARTITION BY ticker
+            ORDER BY month
+        ) AS pre_close
+    FROM monthly_close
+    WHERE rn = 1
+)
+SELECT DISTINCT ticker
+FROM monthly_price
+WHERE pre_close IS NOT NULL
+  AND close < pre_close;
 
