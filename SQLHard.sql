@@ -944,4 +944,49 @@ SELECT DISTINCT ticker
 FROM monthly_price
 WHERE pre_close IS NOT NULL
   AND close < pre_close;
+--Câu 41: User Concurrent Sessions
+--Dùng bài toán đếm người ra vào phòng thay vì đếm overlap thì chuyển bài toán sang tại thời điểm đó đang có bao nhiêu 
+--session chạy mà chưa kết thúc
+WITH events AS (
+    SELECT
+        user_id,
+        session_start AS event_time,
+        1 AS delta
+    FROM user_sessions
+
+    UNION ALL
+
+    SELECT
+        user_id,
+        session_end AS event_time,
+        -1 AS delta
+    FROM user_sessions
+),
+concurrent AS (
+    SELECT
+        user_id,
+        event_time,
+        SUM(delta) OVER (
+            PARTITION BY user_id
+            ORDER BY event_time, delta
+        ) AS concurrent_sessions
+    FROM events
+)
+SELECT
+    user_id,
+    MAX(concurrent_sessions) AS max_concurrent_sessions
+FROM concurrent
+GROUP BY user_id;
+--Câu 42: Monthly Merchant Balance
+with cte as (
+  select transaction_date,
+        SUM(CASE WHEN type='deposit' then amount else -amount end) total_amount_day
+  from transactions 
+  group by transaction_date
+  order by transaction_date
+)
+select transaction_date,
+      SUM(total_amount_day) over(partition by YEAR(transaction_date),MONTH(transaction_date) order by transaction_date) as balance 
+      --qua tháng reset về 0 bằng cách partition by năm, tháng để cộng dồn tính trong khoảng tháng và năm đó qua tháng sẽ là partition khác
+from cte
 
