@@ -989,4 +989,51 @@ select transaction_date,
       SUM(total_amount_day) over(partition by YEAR(transaction_date),MONTH(transaction_date) order by transaction_date) as balance 
       --qua tháng reset về 0 bằng cách partition by năm, tháng để cộng dồn tính trong khoảng tháng và năm đó qua tháng sẽ là partition khác
 from cte
-
+--Câu 43: Bad Delivery Rate
+with cte as (
+  select c.customer_id,
+        o.order_id,
+        o.trip_id,
+        o.order_timestamp,
+        o.status
+  from customers c join orders o on c.customer_id = o.customer_id 
+  where c.signup_timestamp >= '2022-06-01'
+      AND c.signup_timestamp < '2022-07-01' and o.order_timestamp >= c.signup_timestamp and o.order_timestamp < c.signup_timestamp  + INTERVAL '14 days'
+)
+select ROUND(100.0*COUNT(
+  CASE
+ WHEN  cte.status in ('completed incorrectly','never received') 
+      or t.estimated_delivery_timestamp < t.actual_delivery_timestamp 
+      then 1 end
+      )
+        / COUNT(*) from cte,2)
+from cte join trips t on cte.trip_id = t.trip_id
+--Câu 44: Page Recommendation
+WITH AllFriends AS (
+    -- Tạo quan hệ bạn bè 2 chiều
+    SELECT user1_id AS user_id, user2_id AS friend_id FROM Friendship
+    UNION
+    SELECT user2_id AS user_id, user1_id AS friend_id FROM Friendship
+),
+FriendLikes AS (
+    -- Lấy danh sách trang mà bạn bè của user đã thích và đếm số lượng bạn thích
+    SELECT 
+        f.user_id,
+        l.page_id,
+        COUNT(DISTINCT f.friend_id) AS friends_likes
+    FROM AllFriends f
+    JOIN Likes l ON f.friend_id = l.user_id
+    GROUP BY f.user_id, l.page_id
+)
+-- Chọn các trang được đề xuất nhưng loại bỏ trang user đã thích
+SELECT 
+    fl.user_id,
+    fl.page_id,
+    fl.friends_likes
+FROM FriendLikes fl
+WHERE NOT EXISTS (
+    SELECT 1 
+    FROM Likes l 
+    WHERE l.user_id = fl.user_id 
+      AND l.page_id = fl.page_id
+);
