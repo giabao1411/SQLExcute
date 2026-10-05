@@ -1037,3 +1037,91 @@ WHERE NOT EXISTS (
     WHERE l.user_id = fl.user_id 
       AND l.page_id = fl.page_id
 );
+--Câu 45: Facebook – Event Friend Recommendations
+--C1
+  select fs.user_a_id,
+        fs.user_b_id
+  from  friendship_status fs join event_rsvp e1 
+  on fs.user_a_id = e1.user_id join event_rsvp e2 
+  on fs.user_b_id = e2.user_id
+  and e1.event_type = 'private'
+  and e1.attendance_status in ('going','maybe')
+  and e2.event_type = 'private'
+  and e2.attendance_status in ('going','maybe')
+  AND e1.event_id = e2.event_id
+  where fs.status = 'not_friends'
+  group by fs.user_a_id , fs.user_b_id
+  having COUNT(*) >= 2
+  order by fs.user_a_id,fs.user_b_id
+--C2: thực hiện việc lọc dữ liệu event trươc
+with valid_rsvp as (
+  select 
+    user_id,
+    event_id,
+  from event_rsvp 
+  where event_type='private' and attendance_status in('going','maybe')
+ )
+ select fs.user_a_id,
+        fs.user_b_id,
+from friendship_status fs join valid_rsvp v1 
+on fs.user_a_id = v1.user_id join valid_rsvp v2
+on fs.user_b_id = v2.user_id 
+and v1.event_id = v2.event_id
+where fs.status = 'not_friends'
+group by fs.user_a_id, fs.user_b_id
+having COUNT(*) >=2 
+order by fs.user_a_id, fs.user_b_id
+--Câu 46: Airbnb SQL – Matching Rental Amenities
+--C1: dùng selfjoin để tìm ra cặp có cùng số lượng so sánh tổng số amenity của 1 cặp với từng đối tượng trong cặp đó nếu bằng nhau hết => là 1 cặp cùng amenity
+WITH common AS (
+    SELECT
+        l.listing_id,
+        ml.listing_id AS matching_listing_id,
+        COUNT(*) AS common_amenities
+    FROM Listings l
+    JOIN Listings ml
+        ON l.amenity = ml.amenity
+       AND l.listing_id <> ml.listing_id
+    GROUP BY
+        l.listing_id,
+        ml.listing_id
+),
+total AS (
+    SELECT
+        listing_id,
+        COUNT(*) AS total_amenities
+    FROM Listings
+    GROUP BY listing_id
+)
+SELECT
+    c.listing_id,
+    c.matching_listing_id
+FROM common c
+JOIN total t1
+    ON c.listing_id = t1.listing_id
+JOIN total t2
+    ON c.matching_listing_id = t2.listing_id
+WHERE c.common_amenities = t1.total_amenities
+  AND c.common_amenities = t2.total_amenities;
+--C2: dùng array_agg gộp các amenity thành 1 tập hợp sau đó join lại nhìn trực quan hơn
+WITH listing_amenities AS (
+    SELECT
+        listing_id,
+        ARRAY_AGG(amenity ORDER BY amenity) AS amenities
+    FROM Listings
+    GROUP BY listing_id
+)
+SELECT
+    l1.listing_id,
+    l2.listing_id AS matching_listing_id
+FROM listing_amenities l1
+JOIN listing_amenities l2
+    ON l1.amenities = l2.amenities
+   AND l1.listing_id <> l2.listing_id
+ORDER BY
+    l1.listing_id,
+    l2.listing_id;
+
+
+
+ 
