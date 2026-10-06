@@ -1121,7 +1121,22 @@ JOIN listing_amenities l2
 ORDER BY
     l1.listing_id,
     l2.listing_id;
-
+--Câu 47: 
+with cte as ( select user_id,
+        DATE_TRUNC('week',event_date) as week
+from user_actions
+group by user_id , DATE_TRUNC('week',event_date)
+),
+ cte2 as(
+select user_id ,
+ week ,
+ lead(week) over(partition by user_id order by week) as next_week
+ from cte)
+ select week,
+      ROUND(COUNT(case when next_week != week +INTERVAL '7 days' or next_week is null then 1 end)*1.0/COUNT(*),2) AS churn_rate
+from cte2 
+group by week
+order by week
 
 
  
