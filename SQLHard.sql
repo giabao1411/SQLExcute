@@ -1137,6 +1137,25 @@ select user_id ,
 from cte2 
 group by week
 order by week
-
+--Câu 48:
+WITH exclusive_employees AS (
+    SELECT e.employee_id
+    FROM employees e
+    JOIN consulting_engagements ce 
+        ON e.engagement_id = ce.engagement_id
+    GROUP BY e.employee_id
+    HAVING COUNT(DISTINCT ce.client_name) = 1
+)
+SELECT 
+    ce.client_name,
+    COUNT(e.employee_id) AS total_staffed,
+    COUNT(ee.employee_id) AS exclusive_staffed
+FROM employees e
+JOIN consulting_engagements ce 
+    ON e.engagement_id = ce.engagement_id
+LEFT JOIN exclusive_employees ee 
+    ON e.employee_id = ee.employee_id
+GROUP BY ce.client_name
+ORDER BY ce.client_name ASC;
 
  
