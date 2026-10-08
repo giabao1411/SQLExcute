@@ -1750,5 +1750,21 @@ select ticker,
       close-close_lag as monthly_change
 from stock_prices_lag
 where close_lag is not null
-
-
+--Câu 124: Project Employees III
+with cte as (
+    select p.project_id ,
+    e.employee_id,
+    e.experience_years
+    from project p join employee e on p.employee_id = e.employee_id
+)
+, Rank_Exp_Emp as (
+    select project_id,
+    employee_id,
+    experience_years,
+    DENSE_RANK() over(partition by project_id order by experience_years desc) as rnk_exp 
+    from cte
+)
+select project_id,
+        employee_id,
+from Rank_Exp_Emp
+where rnk_exp = 1
