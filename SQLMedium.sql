@@ -1768,3 +1768,32 @@ select project_id,
         employee_id,
 from Rank_Exp_Emp
 where rnk_exp = 1
+--Câu 125: The Most Recent Three Orders
+with tbl_rnk_order_customer
+as (
+    select c.name as customer_name,
+            o.order_id,
+            o.order_date
+            RANK() over(partition by c.customer_id order by o.order_date desc) rnk
+    from Customers c join Orders o on c.customer_id = o.customer_id
+)
+select customer_name,
+        order_id,
+        order_date
+from tbl_rnk_order_customer
+where rnk <=3
+--Câu 126: Maximum Transaction Each Day
+with cte as (
+    select transaction_id,
+        LEFT(day,10) as day,
+        amount,
+        RANK() over(partition by left(day,10) order by amount desc) as rnk
+from Transactions
+)
+select transaction_id,
+        day,
+        amount
+from cte 
+where rnk = 1 
+
+
