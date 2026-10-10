@@ -1795,5 +1795,16 @@ select transaction_id,
         amount
 from cte 
 where rnk = 1 
-
+--Câu 127: New Compaines
+select c.company_code , c.founder,
+        COUNT(distinct l.lead_manager_code),
+        COUNT(distinct s.senior_manager_code),
+        COUNT(distinct m.manager_code),
+        COUNT(distinct e.employee_code)
+from Company c left join Lead_Manager l on c.company_code = l.company_code
+        LEFT JOIN Senior_Manager s on l.lead_manager_code = s.lead_manager_code
+        LEFT JOIN Manager m on s.senior_manager_code = m.senior_manager_code
+        LEFT JOIN Employee e on m.manager_code = e.manager_code 
+group by c.company_code , c.founder     
+order by c.company_code
 
