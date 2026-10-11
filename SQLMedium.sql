@@ -1687,7 +1687,7 @@ SELECT
     AVG(EXTRACT(DAY FROM (next_start_date - end_date))) AS average_bench_time
 FROM cte
 WHERE next_start_date IS NOT NULL;
---Câu 118:
+--Câu 118: Tính lương của nhân viên sale 
 with total_deal_emp as(
     select employee_id ,SUM(deal_size) as total_deal
     from deals 
