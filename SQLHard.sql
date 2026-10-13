@@ -1157,5 +1157,60 @@ LEFT JOIN exclusive_employees ee
     ON e.employee_id = ee.employee_id
 GROUP BY ce.client_name
 ORDER BY ce.client_name ASC;
+--Câu 49: Consecutive Days
+WITH distinct_days AS (
+    SELECT DISTINCT user_id, record_date
+    FROM sf_events
+),
+ tbl_island_event as (
+select user_id ,
+       record_date - (ROW_NUMBER() over(partition by user_id order by record_date) ::int)as island_event
+from distinct_days)
+select distinct user_id 
+from tbl_island_event
+group by user_id , island_event
+having COUNT(*)>2
+--Câu 50: Best Selling Item
+--C1:
+with tbl_total_paid  as(select  
+        EXTRACT(MONTH from invoicedate) as month,
+        description,
+        (quantity*unitprice) as total_paid
+from online_retail
+where   quantity > 0 and invoiceno NOT LIKE 'C%'
 
+),  cte as (
+select  month,
+        description,
+         SUM(total_paid) as total_paid from tbl_total_paid
+        
+group by month,description)
+
+, cte_rnk as (
+select month , description , total_paid,
+ROW_NUMBER() over (partition by month order by total_paid desc) as rnk
+from cte)
+select month,description ,total_paid
+from cte_rnk
+where rnk = 1
+--C2: gộp lại 1 tbl thôi
+WITH monthly_sales AS (
+    SELECT
+        date_part('month', invoicedate) AS month,
+        description,
+        SUM(unitprice * quantity) AS total_paid,
+        RANK() OVER (
+            PARTITION BY date_part('month', invoicedate)
+            ORDER BY SUM(unitprice * quantity) DESC
+        ) AS rnk
+    FROM online_retail
+    WHERE quantity > 0
+    GROUP BY date_part('month', invoicedate), description
+)
+SELECT
+    month,
+    description,
+    total_paid
+FROM monthly_sales
+WHERE rnk = 1;
  
