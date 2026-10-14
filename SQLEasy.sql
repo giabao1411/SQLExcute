@@ -687,3 +687,26 @@ from patients
 --Câu 124: 
 select distinct p.post_id, p.poster,p.post_text,p.post_keywords,p.post_date from facebook_reactions r join facebook_posts p on r.post_id = p.post_id
 where r.reaction = 'heart'
+--Câu 125: Finding Updated Records
+WITH ranked_salary AS (
+    SELECT
+        id,
+        first_name,
+        last_name,
+        department_id,
+        salary,
+        ROW_NUMBER() OVER (
+            PARTITION BY id
+            ORDER BY salary DESC
+        ) AS rn
+    FROM ms_employee_salary
+)
+SELECT
+    id,
+    first_name,
+    last_name,
+    department_id,
+    salary
+FROM ranked_salary
+WHERE rn = 1
+ORDER BY id ASC;
