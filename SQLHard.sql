@@ -1213,4 +1213,28 @@ SELECT
     total_paid
 FROM monthly_sales
 WHERE rnk = 1;
+--Câu 51: Rank Variance Per Country
+with total_cmt_december as (
+  select country,
+    SUM(number_of_comments) as total_december_cmt,
+    DENSE_RANK() over( order by SUM(number_of_comments) desc) rnk_december
+  from fb_comments_count fc join fb_active_users fu 
+        on fc.user_id = fu.user_id
+  where fc.created_at >='12-01-2019' and fc.created_at <'01-01-2020'
+  group by country)
+, 
+total_cmt_jan as (
+  select country,
+        SUM(number_of_comments) as total_jan_cmt,
+        DENSE_RANK() over( order by SUM(number_of_comments) desc) rnk_jan
+  from fb_comments_count fc join fb_active_users fu 
+      on fc.user_id = fu.user_id
+  where fc.created_at >='01-01-2020' and fc.created_at <'02-01-2020'
+  group by country)
+
+select td.country
+from total_cmt_december  td  join total_cmt_jan tj 
+on td.country = tj.country
+where td.rnk_december > tj.rnk_jan
+
  
