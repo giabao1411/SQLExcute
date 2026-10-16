@@ -1807,4 +1807,118 @@ from Company c left join Lead_Manager l on c.company_code = l.company_code
         LEFT JOIN Employee e on m.manager_code = e.manager_code 
 group by c.company_code , c.founder     
 order by c.company_code
+--Câu 128: Users By Average Session Time
+WITH latest_loads AS (
+  
+    SELECT 
+        user_id,
+        DATE(timestamp) AS session_date,
+        MAX(timestamp) AS load_time
+    FROM facebook_web_log
+    WHERE action = 'page_load'
+    GROUP BY user_id, DATE(timestamp)
+),
+earliest_exits AS (
+    
+    SELECT 
+        user_id,
+        DATE(timestamp) AS session_date,
+        MIN(timestamp) AS exit_time
+    FROM facebook_web_log
+    WHERE action = 'page_exit'
+    GROUP BY user_id, DATE(timestamp)
+),
+valid_sessions AS (
+    
+    SELECT 
+        l.user_id,
+        EXTRACT(EPOCH FROM (e.exit_time - l.load_time)) AS session_duration
+    FROM latest_loads l
+    JOIN earliest_exits e 
+        ON l.user_id = e.user_id 
+        AND l.session_date = e.session_date
+    WHERE l.load_time < e.exit_time
+)
 
+SELECT 
+    user_id,
+    AVG(session_duration) AS average_session_time
+FROM valid_sessions
+GROUP BY user_id;
+--Câu 129:
+--C1: self join 
+select r1.date,
+ROUND(SUM(CASE WHEN r2.user_id_sender is not null then 1 else 0 end)*1.0/COUNT(*),2)
+from fb_friend_requests r1
+left join fb_friend_requests r2 on r1.user_id_sender = r2.user_id_sender and r1.user_id_receiver = r2.user_id_receiver 
+and r1.date <= r2.date and r1.action = 'sent' and r2.action ='accepted'
+where r1.action!='accepted'
+group by r1.date
+HAVING SUM(CASE WHEN r2.user_id_sender IS NOT NULL THEN 1 ELSE 0 END) > 0
+order by r1.date
+--C2: CTE 2 bảng accepted và sent nối lại và đếm xử lý trường hợp ngày có gửi kết bạn nhưng không có phản hồi nào thì loại trừ
+WITH sent_requests AS (
+    SELECT user_id_sender, user_id_receiver, date AS sent_date
+    FROM fb_friend_requests
+    WHERE action = 'sent'
+),
+accepted_requests AS (
+    SELECT user_id_sender, user_id_receiver, date AS accepted_date
+    FROM fb_friend_requests
+    WHERE action = 'accepted'
+)
+SELECT 
+    s.sent_date AS date,
+    ROUND(COUNT(a.accepted_date) * 1.0 / COUNT(s.sent_date), 2) AS acceptance_rate
+FROM sent_requests s
+LEFT JOIN accepted_requests a
+    ON s.user_id_sender = a.user_id_sender 
+    AND s.user_id_receiver = a.user_id_receiver
+    AND s.sent_date <= a.accepted_date
+GROUP BY s.sent_date
+HAVING COUNT(a.accepted_date) > 0
+ORDER BY s.sent_date;
+--Câu 130: Finding User Purchases
+--C1: ROWNUMBER() tìm ra ngày mua hàng đầu tiên sau đó join lại kiếm user_id có đơn hàng thứ 2 trong 7 ngày
+WITH cte AS (
+    SELECT DISTINCT
+        t.user_id,
+        t.created_at
+    FROM
+        (SELECT
+            user_id,
+            created_at,
+            ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at) AS rnk
+        FROM amazon_transactions) AS t
+    WHERE t.rnk = 1
+)
+
+SELECT DISTINCT t.user_id FROM
+    amazon_transactions AS t INNER JOIN cte
+    ON
+        t.user_id = cte.user_id
+        AND t.created_at > cte.created_at AND t.created_at <= cte.created_at + INTERVAL '7 days'
+ORDER BY t.user_id
+--C2: không dùng self join
+WITH ranked_transactions AS (
+    SELECT 
+        user_id,
+        created_at,
+        ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at, id) AS rnk
+    FROM amazon_transactions
+),
+first_and_second AS (
+    SELECT 
+        user_id,
+        MAX(CASE WHEN rnk = 1 THEN created_at END) AS first_purchase_date,
+        MAX(CASE WHEN rnk = 2 THEN created_at END) AS second_purchase_date
+    FROM ranked_transactions
+    WHERE rnk <= 2
+    GROUP BY user_id
+)
+SELECT user_id
+FROM first_and_second
+-- Phải có đơn thứ 2 tồn tại VÀ khoảng cách từ 1 đến 7 ngày (tự động loại bỏ same-day = 0 ngày)
+WHERE second_purchase_date IS NOT NULL
+  AND (second_purchase_date::date - first_purchase_date::date) BETWEEN 1 AND 7
+ORDER BY user_id;
