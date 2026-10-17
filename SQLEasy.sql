@@ -709,4 +709,15 @@ SELECT
     salary
 FROM ranked_salary
 WHERE rn = 1
-ORDER BY id ASC;
+ORDER BY id ASC
+--Câu 125:  Total Cost Of Orders
+select c.id, c.first_name , SUM(o.total_order_cost) as sum  from customers c join orders o on
+c.id = o.cust_id
+group by c.id , c.first_name 
+order by c.first_name
+--Câu 126: Workers With The Highest Salaries
+select distinct t.worker_title as best_paid_title
+from worker w join title t on w.worker_id = t.worker_ref_id
+where w.salary = (select MAX(w1.salary) from worker w1 join title t1 
+on w1.worker_id = t1.worker_ref_id)
+order by best_paid_title
