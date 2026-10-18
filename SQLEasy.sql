@@ -721,3 +721,10 @@ from worker w join title t on w.worker_id = t.worker_ref_id
 where w.salary = (select MAX(w1.salary) from worker w1 join title t1 
 on w1.worker_id = t1.worker_ref_id)
 order by best_paid_title
+--Câu 127: Average Salaries
+SELECT
+    department,
+    first_name,
+    salary,
+    AVG(salary) OVER (PARTITION BY department ORDER BY department) AS avg_salary
+FROM employee;
