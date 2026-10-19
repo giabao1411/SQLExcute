@@ -1236,5 +1236,27 @@ select td.country
 from total_cmt_december  td  join total_cmt_jan tj 
 on td.country = tj.country
 where td.rnk_december > tj.rnk_jan
+--Câu 52: Monthly Percentage Difference
+WITH tbl_monthly AS (
+    SELECT
+        TO_CHAR(created_at, 'YYYY-MM') AS month,
+        SUM(value) AS total_monthly
+    FROM sf_transactions
+    GROUP BY TO_CHAR(created_at, 'YYYY-MM')
+),
+
+tbl_monthly_prev AS (
+    SELECT
+        month,
+        total_monthly,
+        LAG(total_monthly) OVER (ORDER BY month) AS prev_total_monthly
+    FROM tbl_monthly
+)
+
+SELECT
+    month,
+    ROUND((total_monthly - prev_total_monthly) * 100.0 / prev_total_monthly, 2) AS revenue_diff_pct
+FROM tbl_monthly_prev
+ORDER BY month;
 
  
