@@ -1922,3 +1922,44 @@ FROM first_and_second
 WHERE second_purchase_date IS NOT NULL
   AND (second_purchase_date::date - first_purchase_date::date) BETWEEN 1 AND 7
 ORDER BY user_id;
+--Câu 131: Risky Projects
+--C1 : tách từng cte riêng để xử lý 
+with cte as (select lp.title,
+    lp.budget,
+    (end_date::date - start_date::date)   AS so_ngay,
+    le.id,
+    le.salary
+    
+from linkedin_projects lp join linkedin_emp_projects lep on 
+lp.id = lep.project_id join linkedin_employees le on lep.emp_id = le.id
+)
+, cte2 as (select title,
+        budget,
+        salary*so_ngay/365.0 salary_emp_in_project
+        from cte)
+select title,
+        budget,
+        CEIL(SUM(salary_emp_in_project)) as prorated_employee_expense
+from cte2
+group by title,budget
+having CEIL(SUM(salary_emp_in_project)) > budget
+order by title
+--C2: gộp lại chỉ dùng 1 cte 
+WITH project_costs AS (
+    SELECT 
+        lp.title,
+        lp.budget,
+        -- Tính tổng chi phí nhân viên theo tỷ lệ ngày làm việc và làm tròn lên bằng CEILING()
+        CEILING((lp.end_date::date - lp.start_date::date) * SUM(le.salary) / 365.0) AS prorated_employee_expense
+    FROM linkedin_projects lp
+    JOIN linkedin_emp_projects lep ON lp.id = lep.project_id
+    JOIN linkedin_employees le ON lep.emp_id = le.id
+    GROUP BY lp.title, lp.budget, lp.start_date, lp.end_date
+)
+SELECT 
+    title,
+    budget,
+    prorated_employee_expense
+FROM project_costs
+WHERE prorated_employee_expense > budget
+ORDER BY title;
