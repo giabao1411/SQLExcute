@@ -1963,3 +1963,20 @@ SELECT
 FROM project_costs
 WHERE prorated_employee_expense > budget
 ORDER BY title;
+--Câu 132: AI Feature Adoption Funnel
+       COUNT(DISTINCT user_id) AS unique_users
+FROM ai_funnel_events WHERE event_type = 'impression'
+UNION ALL
+SELECT 'first_use', COUNT(DISTINCT user_id)
+FROM ai_funnel_events WHERE event_type IN ('first_use', 'repeat_use')
+UNION ALL
+SELECT 'repeat_use', COUNT(DISTINCT user_id)
+FROM ai_funnel_events WHERE event_type = 'repeat_use'
+--Câu 133: Finding Purchases
+with tbl_user_next_transaction as (select user_id ,
+        created_at,
+        LEAD(created_at) over(partition by user_id order by created_at) next_trans
+from amazon_transactions)
+select DISTINCT user_id 
+from tbl_user_next_transaction
+where  next_trans > created_at and  next_trans <= created_at + INTERVAL '7 days'
