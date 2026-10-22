@@ -1980,3 +1980,18 @@ from amazon_transactions)
 select DISTINCT user_id 
 from tbl_user_next_transaction
 where  next_trans > created_at and  next_trans <= created_at + INTERVAL '7 days'
+--Câu 134: Ranking Most Active Guests
+SELECT 
+    DENSE_RANK() OVER(ORDER BY sum(n_messages) DESC) as ranking, 
+    id_guest, 
+    sum(n_messages) as sum_n_messages
+FROM airbnb_contacts
+GROUP BY id_guest
+ORDER BY sum_n_messages DESC
+--Câu 135: Number Of Units Per Nationality
+SELECT
+    ah.nationality,
+    COUNT(DISTINCT au.unit_id) AS apartment_count
+FROM airbnb_hosts AS ah INNER JOIN airbnb_units AS au ON ah.host_id = au.host_id
+WHERE ah.age < 30 AND au.unit_type = 'Apartment'
+GROUP BY ah.nationality;
