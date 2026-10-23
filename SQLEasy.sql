@@ -728,3 +728,6 @@ SELECT
     salary,
     AVG(salary) OVER (PARTITION BY department ORDER BY department) AS avg_salary
 FROM employee;
+--Câu 128: Calculate Samantha's and Lisa's total sales revenue
+select SUM(sales_revenue) from sales_performance
+where salesperson in ('Samantha','Lisa');
