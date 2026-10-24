@@ -1995,3 +1995,36 @@ SELECT
 FROM airbnb_hosts AS ah INNER JOIN airbnb_units AS au ON ah.host_id = au.host_id
 WHERE ah.age < 30 AND au.unit_type = 'Apartment'
 GROUP BY ah.nationality;
+--Câu 137: Matching Similar Hosts and Guests
+select distinct ah.host_id , ag.guest_id from airbnb_hosts ah join airbnb_guests ag 
+on ah.nationality = ag.nationality and ah.gender = ag.gender
+--Câu 138: Income By Title and Gender
+WITH bonus_total AS (
+    SELECT
+        se.id,
+        se.employee_title,
+        se.sex,
+        se.salary,
+        SUM(sb.bonus) AS total_bonus
+    FROM sf_employee AS se
+    INNER JOIN sf_bonus AS sb
+        ON se.id = sb.worker_ref_id
+    GROUP BY se.id, se.employee_title, se.sex, se.salary
+),
+
+compensation_data AS (
+    SELECT
+        id,
+        employee_title,
+        sex,
+        (salary + total_bonus) AS total_compensation
+    FROM bonus_total
+
+)
+
+SELECT
+    employee_title,
+    sex,
+    AVG(total_compensation) AS avg_compensation
+FROM compensation_data
+GROUP BY employee_title, sex
