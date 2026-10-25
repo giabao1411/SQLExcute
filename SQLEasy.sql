@@ -731,3 +731,12 @@ FROM employee;
 --Câu 128: Calculate Samantha's and Lisa's total sales revenue
 select SUM(sales_revenue) from sales_performance
 where salesperson in ('Samantha','Lisa');
+--Câu 129: Wine varieties tasted by 'Roger Voss'
+ distinct variety  from winemag_p2
+where taster_name ='Roger Voss' and region_1 is not null
+--Câu 130: Hour Of Highest Gas Expense
+select hour from lyft_rides
+where gasoline_cost = (select MAX(gasoline_cost) from lyft_rides)
+--Câu 131: 
+select * from lyft_rides
+where weather = 'rainy' and hour < 12
