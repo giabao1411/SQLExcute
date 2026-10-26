@@ -2028,3 +2028,39 @@ SELECT
     AVG(total_compensation) AS avg_compensation
 FROM compensation_data
 GROUP BY employee_title, sex
+--Câu 136: Find the number of inspections for each risk category by inspection type
+ inspection_max_risk AS (
+    SELECT 
+        inspection_id,
+        inspection_type,
+        MAX(
+            CASE 
+                WHEN risk_category = 'High Risk' THEN 3
+                WHEN risk_category = 'Moderate Risk' THEN 2
+                WHEN risk_category = 'Low Risk' THEN 1
+                ELSE 0
+            END
+        ) AS risk_score
+    FROM sf_restaurant_health_violations
+    GROUP BY inspection_id, inspection_type
+)
+SELECT 
+    inspection_type,
+    SUM(CASE WHEN risk_score = 0 THEN 1 ELSE 0 END) AS no_risk_category,
+    SUM(CASE WHEN risk_score = 1 THEN 1 ELSE 0 END) AS low_risk,
+    SUM(CASE WHEN risk_score = 2 THEN 1 ELSE 0 END) AS moderate_risk,
+    SUM(CASE WHEN risk_score = 3 THEN 1 ELSE 0 END) AS high_risk,
+    COUNT(*) AS total_inspections
+FROM inspection_max_risk
+GROUP BY inspection_type
+ORDER BY total_inspections DESC
+--Câu 139: Top Cool Votes
+SELECT
+    cte.business_name,
+    cte.review_text
+FROM (SELECT
+    business_name,
+    review_text,
+    RANK() OVER (ORDER BY cool DESC) AS rnk
+FROM yelp_reviews) AS cte
+WHERE cte.rnk = 1;
