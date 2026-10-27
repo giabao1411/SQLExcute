@@ -737,6 +737,9 @@ where taster_name ='Roger Voss' and region_1 is not null
 --Câu 130: Hour Of Highest Gas Expense
 select hour from lyft_rides
 where gasoline_cost = (select MAX(gasoline_cost) from lyft_rides)
---Câu 131: 
+--Câu 131: Find all Lyft rides which happened on rainy days before noon
 select * from lyft_rides
 where weather = 'rainy' and hour < 12
+--Câu 132: Lyft Driver Wages
+select * from lyft_drivers
+where yearly_salary <= 30000 or yearly_salary >=70000
