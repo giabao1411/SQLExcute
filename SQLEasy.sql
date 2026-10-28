@@ -743,3 +743,13 @@ where weather = 'rainy' and hour < 12
 --Câu 132: Lyft Driver Wages
 select * from lyft_drivers
 where yearly_salary <= 30000 or yearly_salary >=70000
+--Câu 133: Artist Appearance Count
+select artist, COUNT(id) as n_occurences
+from spotify_worldwide_daily_song_ranking
+group by artist
+order by n_occurences 
+--Câu 134: Top Ranked Songs
+select trackname, COUNT(*) as streaming  from spotify_worldwide_daily_song_ranking
+where position = 1
+group by trackname
+order by streaming 
