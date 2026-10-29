@@ -753,3 +753,16 @@ select trackname, COUNT(*) as streaming  from spotify_worldwide_daily_song_ranki
 where position = 1
 group by trackname
 order by streaming 
+--Câu 135: Olympics Events List By Age
+select MIN(age) lowest_age ,
+        AVG(age) mean_age,
+        MAX(age) highest_age
+from olympics_athletes_events;
+--Câu 136: Order Details
+select c.first_name, o.order_date ,o.order_details, o.total_order_cost from customers c join orders o on c.id = o.cust_id
+where c.first_name in ('Jill','Eva')
+order by c.id asc
+--Câu 137: Departments With 5 Employees
+select department from employee
+group by department
+having COUNT(id)>=5
