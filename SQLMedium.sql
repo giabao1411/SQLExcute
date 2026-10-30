@@ -2064,3 +2064,32 @@ FROM (SELECT
     RANK() OVER (ORDER BY cool DESC) AS rnk
 FROM yelp_reviews) AS cte
 WHERE cte.rnk = 1;
+--Câu 140: Reviews of Categories
+WITH cte AS (
+    SELECT
+        business_id,
+        review_count,
+        UNNEST(STRING_TO_ARRAY(categories, ';')) AS category
+    FROM yelp_business
+)
+
+SELECT
+    category,
+    SUM(review_count) AS review_cnt
+FROM cte
+GROUP BY category
+ORDER BY review_cnt DESC;
+--Câu 141: Top Businesses With Most Reviews
+WITH cte AS (
+    SELECT
+        name,
+        review_count,
+        RANK() OVER (ORDER BY review_count DESC) AS rnk
+    FROM yelp_business
+)
+
+SELECT
+    name,
+    review_count
+FROM cte
+WHERE rnk <= 5;
