@@ -766,3 +766,16 @@ order by c.id asc
 select department from employee
 group by department
 having COUNT(id)>=5
+--Câu 138: Titanic Survivors and Non-Survivors
+select survived,
+        SUM(CASE WHEN pclass = 1 then 1 else 0 end) as first_class,
+        SUM(CASE WHEN pclass = 2 then 1 else 0 end) as second_class,
+        SUM(CASE WHEN pclass = 3 then 1 else 0 end) as third_class
+        from titanic
+        group by survived
+--Câu 139: April Admin Employees
+select COUNT(*) as n_admins from worker
+where department = 'Admin' and EXTRACT(MONTH FROM joining_date) >= 4
+--Câu 140: First Names With Six Letters Ending in 'h'
+select * from worker
+where LENGTH(first_name) = 6 and first_name LIKE '%h'
