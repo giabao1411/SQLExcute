@@ -2093,3 +2093,26 @@ SELECT
     review_count
 FROM cte
 WHERE rnk <= 5;
+--Câu 142: Highest Target Under Manager
+SELECT
+    first_name,
+    target
+FROM salesforce_employees
+WHERE manager_id = 13 AND target = (
+    SELECT MAX(target) FROM salesforce_employees
+    WHERE manager_id = 13
+);
+--Câu 143: Highest Salary In Department
+SELECT
+    cte.department,
+    cte.first_name,
+    cte.salary
+FROM (
+    SELECT
+        department,
+        first_name,
+        salary,
+        DENSE_RANK() OVER (PARTITION BY department ORDER BY salary DESC) AS rnk
+    FROM employee
+) AS cte
+WHERE cte.rnk = 1;
