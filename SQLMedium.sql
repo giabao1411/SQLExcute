@@ -2116,3 +2116,13 @@ FROM (
     FROM employee
 ) AS cte
 WHERE cte.rnk = 1;
+--Câu 144: Employee and Manager Salaries
+SELECT
+    emp.first_name,
+    emp.salary
+FROM employee AS emp
+INNER JOIN employee AS mgr ON emp.manager_id = mgr.id AND emp.salary > mgr.salary;
+--Câu 145: Second Highest Salary
+select MAX(salary)
+from employee
+where salary < (select MAX(salary) from employee)
