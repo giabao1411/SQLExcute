@@ -2126,3 +2126,27 @@ INNER JOIN employee AS mgr ON emp.manager_id = mgr.id AND emp.salary > mgr.salar
 select MAX(salary)
 from employee
 where salary < (select MAX(salary) from employee)
+--Câu 146: Duplicate HR Department Employees
+select first_name , department 
+from worker
+where department = 'HR'
+group by first_name, department
+
+union all 
+select first_name , department 
+from worker
+where department = 'HR'
+group by first_name, department
+--Câu 147: Employees With the Same Salary
+SELECT
+    w1.worker_id,
+    w1.first_name,
+    w1.salary
+FROM worker AS w1
+WHERE
+    EXISTS (
+        SELECT 1
+        FROM worker AS w2
+        WHERE w2.worker_id != w1.worker_id AND w2.salary = w1.salary
+    )
+ORDER BY w1.salary DESC;
