@@ -2150,3 +2150,22 @@ WHERE
         WHERE w2.worker_id != w1.worker_id AND w2.salary = w1.salary
     )
 ORDER BY w1.salary DESC;
+--Câu 148: Count Occurrences Of Words In Drafts
+SELECT LOWER(word) AS word,
+       COUNT(*) AS occurrences
+FROM google_file_store t,
+     regexp_split_to_table(regexp_replace(t.contents, '[[:punct:]]', '', 'g'), E'\\s+') AS word
+GROUP BY LOWER(word)
+ORDER BY occurrences DESC
+--Câu 149: Make the friends network symmetric
+SELECT
+ user_id,
+ friend_id
+FROM
+ google_friends_network
+UNION
+SELECT
+ friend_id AS user_id,
+ user_id AS friend_id
+FROM
+ google_friends_network
