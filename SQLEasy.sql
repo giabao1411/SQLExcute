@@ -779,3 +779,6 @@ where department = 'Admin' and EXTRACT(MONTH FROM joining_date) >= 4
 --Câu 140: First Names With Six Letters Ending in 'h'
 select * from worker
 where LENGTH(first_name) = 6 and first_name LIKE '%h'
+--Câu 141: Find drafts which contains the word 'optimism'
+select * from google_file_store
+where LOWER(filename) LIKE 'draft%' and LOWER(contents) LIKE '%optimism%'
