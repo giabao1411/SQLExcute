@@ -782,3 +782,10 @@ where LENGTH(first_name) = 6 and first_name LIKE '%h'
 --Câu 141: Find drafts which contains the word 'optimism'
 select * from google_file_store
 where LOWER(filename) LIKE 'draft%' and LOWER(contents) LIKE '%optimism%'
+--Câu 142: Number of violations
+select extract (year from inspection_date) as year , COUNT(violation_id) as n_violations from sf_restaurant_health_violations
+where business_name ='Roxanne Cafe' and violation_id is not null 
+group by extract (year from inspection_date)
+--Câu 143: Inspection For Glassell Coffee Shop
+select * from los_angeles_restaurant_health_inspections
+where owner_name ='GLASSELL COFFEE SHOP LLC'
