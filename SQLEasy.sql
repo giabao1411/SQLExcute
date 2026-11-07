@@ -789,3 +789,10 @@ group by extract (year from inspection_date)
 --Câu 143: Inspection For Glassell Coffee Shop
 select * from los_angeles_restaurant_health_inspections
 where owner_name ='GLASSELL COFFEE SHOP LLC'
+--Câu 144: Churro Activity Date
+select activity_date, pe_description from los_angeles_restaurant_health_inspections
+where facility_name = 'STREET CHURROS'
+--Câu 145: Most Profitable Financial Company
+select company , continent from forbes_global_2010_2014
+where sector = 'Financials' and profits = (select MAX(profits) from forbes_global_2010_2014
+where sector='Financials')
