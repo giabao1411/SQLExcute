@@ -1258,5 +1258,18 @@ SELECT
     ROUND((total_monthly - prev_total_monthly) * 100.0 / prev_total_monthly, 2) AS revenue_diff_pct
 FROM tbl_monthly_prev
 ORDER BY month;
+--Câu 58: Counting Instances in Text
+with cte as (SELECT LOWER(word) as low_word
+FROM google_file_store t,
+     regexp_split_to_table(regexp_replace(t.contents, '[[:punct:]]', '', 'g'), E'\\s+') AS word)
+     select low_word ,COUNT(*)
+     from cte 
+     where low_word in ('bull','bear')
+     group by low_word
 
- 
+
+
+
+
+
+
