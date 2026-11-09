@@ -2169,3 +2169,8 @@ SELECT
  user_id AS friend_id
 FROM
  google_friends_network
+ --Câu 150: Processed Ticket Rate By Type
+select type ,
+ROUND(SUM(CASE WHEN processed = 'TRUE' then 1 end )*1.0/COUNT(*),2) as processed_rate
+from facebook_complaints
+group by type;
