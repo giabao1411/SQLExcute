@@ -2174,3 +2174,11 @@ select type ,
 ROUND(SUM(CASE WHEN processed = 'TRUE' then 1 end )*1.0/COUNT(*),2) as processed_rate
 from facebook_complaints
 group by type;
+--Câu 151: Top 10 Songs 2010
+select distinct year_rank, group_name , song_name from billboard_top_100_year_end
+where year = 2010 and  year_rank <=10
+order by year_rank 
+--Câu 152: Customers with Large Orders
+select distinct oc.customer_id,oc.customer_name from online_store_customers oc join online_store_orders od on
+oc.customer_id = od.customer_id
+where od.status in ('paid','pending') and od.amount>100
