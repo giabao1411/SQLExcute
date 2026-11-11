@@ -2182,3 +2182,14 @@ order by year_rank
 select distinct oc.customer_id,oc.customer_name from online_store_customers oc join online_store_orders od on
 oc.customer_id = od.customer_id
 where od.status in ('paid','pending') and od.amount>100
+--Câu 153: Department Workforce Analysis
+select department, 
+        COUNT(id) as headcount,
+        SUM(salary) as total_payroll,
+        AVG(salary) as avg_salary 
+from techcorp_workforce
+where Extract ( YEAR from joining_date)::int > 2020
+group by department 
+having COUNT(id)>=5
+--Câu 154: Contact Information Completeness
+select ROUND(SUM(CASE WHEN phone_number is null then 1 end)*1.0/COUNT(*),2) from techcorp_workforce;
