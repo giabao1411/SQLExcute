@@ -796,3 +796,7 @@ where facility_name = 'STREET CHURROS'
 select company , continent from forbes_global_2010_2014
 where sector = 'Financials' and profits = (select MAX(profits) from forbes_global_2010_2014
 where sector='Financials')
+--Câu 146: MacBookPro User Event Count
+select event_name , COUNT(*) as event_count from playbook_events
+where device = 'macbook pro'
+group by event_name
