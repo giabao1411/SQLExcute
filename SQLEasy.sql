@@ -800,3 +800,6 @@ where sector='Financials')
 select event_name , COUNT(*) as event_count from playbook_events
 where device = 'macbook pro'
 group by event_name
+--Câu 147: High Earners in Support Departments
+select first_name , last_name,department, salary from techcorp_workforce
+where salary > 80000 and department in ('HR','Admin')
