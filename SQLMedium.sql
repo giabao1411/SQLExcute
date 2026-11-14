@@ -2193,3 +2193,11 @@ group by department
 having COUNT(id)>=5
 --Câu 154: Contact Information Completeness
 select ROUND(SUM(CASE WHEN phone_number is null then 1 end)*1.0/COUNT(*),2) from techcorp_workforce;
+--Câu 155: Flags per Video
+select video_id ,COUNT(DISTINCT CONCAT(user_firstname,' ',user_lastname)) as num_unique_users from user_flags
+where flag_id is not null
+group by video_id
+--Câu 156: Maximum of Two Numbers
+select d1.number as number1, d2.number as number2
+, CASE WHEN d1.number >=d2.number then d1.number else d2.number end  as max_number
+from deloitte_numbers d1 cross join deloitte_numbers d2 
