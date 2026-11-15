@@ -803,3 +803,6 @@ group by event_name
 --Câu 147: High Earners in Support Departments
 select first_name , last_name,department, salary from techcorp_workforce
 where salary > 80000 and department in ('HR','Admin')
+--Câu 148: Unique Users Per Client Per Month
+select client_id,EXTRACT(MONTH from time_id) as month , COUNT(DISTINCT user_id) from fact_events
+group by client_id, EXTRACT (MONTH  from time_id)
