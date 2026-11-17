@@ -2205,3 +2205,14 @@ from deloitte_numbers d1 cross join deloitte_numbers d2
 select SUM(case 
 when  country = 'USA' and status ='open' then 1 else 0 end)*100.0/COUNT(*) as us_active_share  
 from fb_active_users
+--Câu 158: Inactive Free Users
+SELECT u.user_id
+FROM rc_users u
+WHERE u.status = 'free'
+  AND NOT EXISTS (
+      SELECT 1 
+      FROM rc_calls c 
+      WHERE c.user_id = u.user_id 
+        AND c.date >= '2020-04-01' 
+        AND c.date <= '2020-04-30'
+  );
