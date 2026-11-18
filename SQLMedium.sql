@@ -2216,3 +2216,25 @@ WHERE u.status = 'free'
         AND c.date >= '2020-04-01' 
         AND c.date <= '2020-04-30'
   );
+--Câu 159: Top 2 Users With Most Calls
+WITH call_counts AS (
+    
+    SELECT user_id, COUNT(call_id) AS total_calls
+    FROM rc_calls
+    GROUP BY user_id
+),
+ranked_users AS (
+   
+    SELECT 
+        ru.company_id,
+        ru.user_id,
+        DENSE_RANK() OVER (
+            PARTITION BY ru.company_id 
+            ORDER BY cc.total_calls DESC
+        ) AS rnk
+    FROM call_counts cc
+    JOIN rc_users ru ON cc.user_id = ru.user_id
+)
+SELECT company_id, user_id, rnk AS rank
+FROM ranked_users
+WHERE rnk <= 2;
