@@ -2238,3 +2238,43 @@ ranked_users AS (
 SELECT company_id, user_id, rnk AS rank
 FROM ranked_users
 WHERE rnk <= 2;
+--Câu 160: Call Declines
+--C1: dùng LAG()
+WITH MonthlyUsers AS (
+    SELECT 
+        ru.company_id,
+        DATE_TRUNC('month', rc.date) AS call_month,
+        COUNT(DISTINCT rc.user_id) AS active_users
+    FROM rc_calls rc
+    JOIN rc_users ru ON rc.user_id = ru.user_id
+    WHERE rc.date >= '2020-03-01' AND rc.date < '2020-05-01'
+    GROUP BY ru.company_id, DATE_TRUNC('month', rc.date)
+),
+CalculatedVariance AS (
+    SELECT 
+        company_id,
+        call_month,
+        active_users - LAG(active_users) OVER (
+            PARTITION BY company_id 
+            ORDER BY call_month ASC
+        ) AS calls_var
+    FROM MonthlyUsers
+)
+SELECT 
+    company_id, 
+    calls_var
+FROM CalculatedVariance
+WHERE call_month = '2020-04-01'
+ORDER BY calls_var ASC
+LIMIT 1;
+--C2: dùng count(distinct case when)
+SELECT 
+    ru.company_id,
+    COUNT(DISTINCT CASE WHEN rc.date >= '2020-04-01' AND rc.date <= '2020-04-30' THEN rc.user_id END) 
+    - COUNT(DISTINCT CASE WHEN rc.date >= '2020-03-01' AND rc.date <= '2020-03-31' THEN rc.user_id END) AS calls_var
+FROM rc_calls rc
+JOIN rc_users ru ON rc.user_id = ru.user_id
+WHERE rc.date >= '2020-03-01' AND rc.date <= '2020-04-30'
+GROUP BY ru.company_id
+ORDER BY calls_var ASC
+LIMIT 1;
