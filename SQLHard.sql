@@ -1266,7 +1266,16 @@ FROM google_file_store t,
      from cte 
      where low_word in ('bull','bear')
      group by low_word
+--Câu 59: New And Existing Users
+with cte as (select Extract (month from time_id) as month,user_id,
+MIN(EXTRACT (MONTH from time_id)) over(partition by user_id) as month_begin
+from fact_events)
+select month ,
+COUNT(DISTINCT CASE WHEN month = month_begin then user_id end)*1.0/COUNT(distinct user_id) as share_new_users,
+COUNT(DISTINCT CASE WHEN month > month_begin then user_id end)*1.0/COUNT(distinct user_id) as share_existing_users
 
+from cte
+group by month
 
 
 
