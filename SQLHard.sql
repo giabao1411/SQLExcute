@@ -1276,6 +1276,42 @@ COUNT(DISTINCT CASE WHEN month > month_begin then user_id end)*1.0/COUNT(distinc
 
 from cte
 group by month
+--Câu 60: Most Popular Client For Calls
+WITH call_ratios AS (
+    SELECT
+        user_id,
+        client_id,
+        AVG(
+            CASE
+                WHEN event_type IN (
+                    'video call received',
+                    'video call sent',
+                    'voice call received',
+                    'voice call sent'
+                ) THEN 1.0
+                ELSE 0.0
+            END
+        ) AS call_share
+    FROM fact_events
+    GROUP BY user_id, client_id
+    HAVING AVG(
+        CASE
+            WHEN event_type IN (
+                'video call received',
+                'video call sent',
+                'voice call received',
+                'voice call sent'
+            ) THEN 1.0
+            ELSE 0.0
+        END
+    ) >= 0.5
+)
+SELECT
+    client_id
+FROM call_ratios
+GROUP BY client_id
+ORDER BY COUNT(DISTINCT user_id) DESC
+LIMIT 1;
 
 
 
