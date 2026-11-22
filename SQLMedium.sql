@@ -2278,3 +2278,15 @@ WHERE rc.date >= '2020-03-01' AND rc.date <= '2020-04-30'
 GROUP BY ru.company_id
 ORDER BY calls_var ASC
 LIMIT 1;
+--Câu 161: Signups By Billing Cycle
+with tbl_billing_cycle_groupby as (select p.billing_cycle,
+COUNT(*) as quantity,
+SUM(COUNT(*)) over() as total
+from signups s 
+left join plans p on
+s.plan_id = p.id
+group by p.billing_cycle)
+
+select billing_cycle,
+ROUND((quantity*100.0)/total,2) as percent_billing_cycle_signups
+from tbl_billing_cycle_groupby
