@@ -1312,6 +1312,38 @@ FROM call_ratios
 GROUP BY client_id
 ORDER BY COUNT(DISTINCT user_id) DESC
 LIMIT 1;
+--Câu 61: Find The Most Profitable Location
+WITH signup_durations AS (
+    SELECT
+        signup_id,
+        location,
+        (signup_stop_date::DATE - signup_start_date::DATE) AS duration_days
+    FROM signups
+    WHERE signup_stop_date IS NOT NULL
+),
+avg_duration_by_loc AS (
+    SELECT
+        location,
+        AVG(duration_days) AS avg_days
+    FROM signup_durations
+    GROUP BY location
+),
+avg_amt_by_loc AS (
+    SELECT
+        s.location,
+        AVG(t.amt) AS avg_amt
+    FROM signups s
+    JOIN transactions t ON s.signup_id = t.signup_id
+    GROUP BY s.location
+)
+SELECT
+    d.location,
+    d.avg_days,
+    a.avg_amt,
+    a.avg_amt / NULLIF(d.avg_days, 0) AS ratio
+FROM avg_duration_by_loc d
+JOIN avg_amt_by_loc a ON d.location = a.location
+ORDER BY ratio DESC;
 
 
 
