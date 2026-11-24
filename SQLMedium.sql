@@ -2290,3 +2290,13 @@ group by p.billing_cycle)
 select billing_cycle,
 ROUND((quantity*100.0)/total,2) as percent_billing_cycle_signups
 from tbl_billing_cycle_groupby
+--Câu 162: Avg Earnings per Weekday and Hour
+SELECT
+    EXTRACT(ISODOW FROM customer_placed_order_datetime)::INT AS weekday,
+    EXTRACT(HOUR FROM customer_placed_order_datetime)::INT AS hour,
+    AVG(order_total) AS avg_earnings
+FROM doordash_delivery
+GROUP BY
+    EXTRACT(ISODOW FROM customer_placed_order_datetime),
+    EXTRACT(HOUR FROM customer_placed_order_datetime)
+ORDER BY weekday, hour;
