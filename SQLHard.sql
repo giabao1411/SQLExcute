@@ -1344,6 +1344,25 @@ SELECT
 FROM avg_duration_by_loc d
 JOIN avg_amt_by_loc a ON d.location = a.location
 ORDER BY ratio DESC;
+--Câu 62: Delivering and Placing Orders
+WITH restaurant_metrics AS (
+    SELECT
+        restaurant_id,
+        AVG(order_total) AS avg_order_total,
+        AVG(
+            EXTRACT(
+                EPOCH FROM (placed_order_with_restaurant_datetime - customer_placed_order_datetime)
+            )
+        ) AS avg_time_diff_sec
+    FROM doordash_delivery
+    WHERE placed_order_with_restaurant_datetime IS NOT NULL
+      AND customer_placed_order_datetime IS NOT NULL
+      AND order_total IS NOT NULL
+    GROUP BY restaurant_id
+)
+SELECT
+    CORR(avg_order_total, avg_time_diff_sec) AS correlation
+FROM restaurant_metrics;
 
 
 
