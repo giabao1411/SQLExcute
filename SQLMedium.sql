@@ -2300,3 +2300,10 @@ GROUP BY
     EXTRACT(ISODOW FROM customer_placed_order_datetime),
     EXTRACT(HOUR FROM customer_placed_order_datetime)
 ORDER BY weekday, hour;
+--Câu 163: Avg Order Cost During Rush Hours
+select extract(hour from customer_placed_order_datetime) as hour ,
+AVG(order_total) as avg_total
+from delivery_details
+where delivery_region = 'San Jose' 
+and EXTRACT (hour from customer_placed_order_datetime) in (15,16,17)
+group by extract(hour from customer_placed_order_datetime)
