@@ -806,3 +806,15 @@ where salary > 80000 and department in ('HR','Admin')
 --Câu 148: Unique Users Per Client Per Month
 select client_id,EXTRACT(MONTH from time_id) as month , COUNT(DISTINCT user_id) from fact_events
 group by client_id, EXTRACT (MONTH  from time_id)
+--Câu 149: Products Report Summary
+SELECT
+    p.product_category,
+    COUNT(DISTINCT t.transaction_id) AS unique_transactions,
+    SUM(t.sales) AS total_sales
+FROM wfm_transactions AS t
+JOIN wfm_products AS p
+    ON t.product_id = p.product_id
+WHERE t.transaction_date >= '2017-01-01'
+  AND t.transaction_date < '2018-01-01'
+GROUP BY p.product_category
+ORDER BY total_sales DESC;
