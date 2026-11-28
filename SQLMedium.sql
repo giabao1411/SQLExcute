@@ -2307,3 +2307,12 @@ from delivery_details
 where delivery_region = 'San Jose' 
 and EXTRACT (hour from customer_placed_order_datetime) in (15,16,17)
 group by extract(hour from customer_placed_order_datetime)
+--Câu 164: Customers Report Summary
+select extract(month from transaction_date) as month ,
+COUNT(distinct customer_id) as total_customers,
+SUM(sales) as total_sales,
+COUNT(distinct transaction_id) as total_transactions
+from wfm_transactions
+where sales >= 5
+and transaction_date >='2017-01-01' and transaction_date<'2018-01-01'
+group by extract (month from transaction_date) 
